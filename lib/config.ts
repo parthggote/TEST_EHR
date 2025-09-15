@@ -17,7 +17,7 @@ export interface EpicConfig {
 export function getEpicConfig(): EpicConfig {
   const config: EpicConfig = {
     clientId: process.env.CLIENT_ID || '',
-    redirectUri: process.env.REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
+    redirectUri: process.env.REDIRECT_URI || 'https://test-ehr.vercel.app/api/auth/callback',
     baseUrl: process.env.FHIR_BASE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
     authorizeUrl: process.env.EPIC_AUTHORIZE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
     tokenUrl: process.env.EPIC_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
