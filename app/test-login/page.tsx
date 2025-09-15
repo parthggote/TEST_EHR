@@ -133,21 +133,21 @@ export default function TestLoginPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" asChild>
-                  <a href="/api/epic-test" target="_blank">
+                <a href="/api/epic-test" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline">
                     View Auth Config
-                  </a>
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href="/debug" target="_blank">
+                  </Button>
+                </a>
+                <a href="/debug" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline">
                     Debug Console
-                  </a>
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href="/status" target="_blank">
+                  </Button>
+                </a>
+                <a href="/status" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline">
                     App Status
-                  </a>
-                </Button>
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>
