@@ -21,7 +21,14 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
-import { Patient } from '@/lib/types/fhir';
+import {
+  Patient,
+  Appointment,
+  Condition,
+  MedicationRequest,
+  AllergyIntolerance,
+  FHIRBundle
+} from '@/lib/types/fhir';
 import { useToast } from '@/hooks/use-toast';
 
 interface TokenMetadata {
@@ -31,10 +38,25 @@ interface TokenMetadata {
   encounterId?: string;
 }
 
+// Define state structure for clinical data
+interface ClinicalData {
+  appointments: FHIRBundle<Appointment> | null;
+  conditions: FHIRBundle<Condition> | null;
+  medications: FHIRBundle<MedicationRequest> | null;
+  allergies: FHIRBundle<AllergyIntolerance> | null;
+}
+
 export default function DashboardPage() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [tokenMetadata, setTokenMetadata] = useState<TokenMetadata | null>(null);
+  const [clinicalData, setClinicalData] = useState<ClinicalData>({
+    appointments: null,
+    conditions: null,
+    medications: null,
+    allergies: null,
+  });
   const [loading, setLoading] = useState(true);
+  const [loadingClinical, setLoadingClinical] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -42,6 +64,12 @@ export default function DashboardPage() {
     loadPatientData();
     loadTokenMetadata();
   }, []);
+
+  useEffect(() => {
+    if (patient?.id) {
+      loadClinicalData(patient.id);
+    }
+  }, [patient]);
 
   const loadTokenMetadata = async () => {
     try {
@@ -75,13 +103,15 @@ export default function DashboardPage() {
 
       const bundle = await response.json();
       
-      // If we have a specific patient ID from the token, get that patient
-      // Otherwise, this might be a provider context where we need to search
+      let patientResource: Patient | null = null;
       if (bundle.resourceType === 'Patient') {
-        setPatient(bundle);
+        patientResource = bundle;
       } else if (bundle.entry && bundle.entry.length > 0) {
-        // Take the first patient from search results
-        setPatient(bundle.entry[0].resource);
+        patientResource = bundle.entry[0].resource;
+      }
+
+      if (patientResource) {
+        setPatient(patientResource);
       } else {
         setError('No patient data available in current context');
       }
@@ -95,6 +125,34 @@ export default function DashboardPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadClinicalData = async (patientId: string) => {
+    setLoadingClinical(true);
+    try {
+      const dataTypes = ['appointments', 'conditions', 'medications', 'allergies'];
+      const requests = dataTypes.map(type =>
+        fetch(`/api/fhir/${type}?patient=${patientId}`)
+          .then(res => {
+            if (!res.ok) throw new Error(`Failed to fetch ${type}`);
+            return res.json();
+          })
+      );
+
+      const [appointments, conditions, medications, allergies] = await Promise.all(requests);
+
+      setClinicalData({ appointments, conditions, medications, allergies });
+
+    } catch (error) {
+      console.error('Error loading clinical data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load some clinical data. The information may be incomplete.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingClinical(false);
     }
   };
 
@@ -259,8 +317,12 @@ export default function DashboardPage() {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">Loading...</p>
+                  <div className="text-2xl font-bold">
+                    {loadingClinical ? '...' : clinicalData.appointments?.total ?? 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {clinicalData.appointments?.entry?.length ?? 0} scheduled
+                  </p>
                 </CardContent>
               </Card>
 
@@ -270,8 +332,12 @@ export default function DashboardPage() {
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">Loading...</p>
+                  <div className="text-2xl font-bold">
+                    {loadingClinical ? '...' : clinicalData.conditions?.total ?? 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {clinicalData.conditions?.entry?.length ?? 0} active
+                  </p>
                 </CardContent>
               </Card>
 
@@ -281,8 +347,12 @@ export default function DashboardPage() {
                   <Pill className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">Loading...</p>
+                  <div className="text-2xl font-bold">
+                    {loadingClinical ? '...' : clinicalData.medications?.total ?? 0}
+                  </div>
+                   <p className="text-xs text-muted-foreground">
+                    {clinicalData.medications?.entry?.length ?? 0} prescribed
+                  </p>
                 </CardContent>
               </Card>
 
@@ -292,8 +362,12 @@ export default function DashboardPage() {
                   <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">Loading...</p>
+                  <div className="text-2xl font-bold">
+                    {loadingClinical ? '...' : clinicalData.allergies?.total ?? 0}
+                  </div>
+                   <p className="text-xs text-muted-foreground">
+                    {clinicalData.allergies?.entry?.length ?? 0} known
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -305,11 +379,24 @@ export default function DashboardPage() {
                 <CardDescription>Latest updates from your Epic MyChart</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Clinical data will be loaded here</p>
-                  <p className="text-sm">Use the tabs above to explore different data types</p>
-                </div>
+                {loadingClinical ? (
+                  <p>Loading clinical data...</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {clinicalData.appointments?.entry?.slice(0, 2).map(item => (
+                      <li key={item.resource.id}>Appointment: {item.resource.description || 'No description'} on {formatDate(item.resource.start)}</li>
+                    ))}
+                    {clinicalData.conditions?.entry?.slice(0, 1).map(item => (
+                      <li key={item.resource.id}>Condition: {item.resource.code?.text || 'No description'}</li>
+                    ))}
+                    {clinicalData.medications?.entry?.slice(0, 1).map(item => (
+                      <li key={item.resource.id}>Medication: {item.resource.medicationCodeableConcept?.text || 'No description'}</li>
+                    ))}
+                    {clinicalData.allergies?.entry?.slice(0, 1).map(item => (
+                      <li key={item.resource.id}>Allergy: {item.resource.code?.text || 'No description'}</li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -321,10 +408,13 @@ export default function DashboardPage() {
                 <CardDescription>View and manage your appointments</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Appointment data will be implemented here</p>
-                </div>
+                {loadingClinical ? <p>Loading...</p> : (
+                  <ul>
+                    {clinicalData.appointments?.entry?.map(item => (
+                      <li key={item.resource.id}>{item.resource.description} - {formatDate(item.resource.start)}</li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -336,10 +426,13 @@ export default function DashboardPage() {
                 <CardDescription>Vitals, lab results, and observations</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Clinical data will be implemented here</p>
-                </div>
+                {loadingClinical ? <p>Loading...</p> : (
+                  <ul>
+                    {clinicalData.conditions?.entry?.map(item => (
+                      <li key={item.resource.id}>{item.resource.code?.text}</li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -351,10 +444,13 @@ export default function DashboardPage() {
                 <CardDescription>Current and past medications</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Pill className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Medication data will be implemented here</p>
-                </div>
+                {loadingClinical ? <p>Loading...</p> : (
+                  <ul>
+                    {clinicalData.medications?.entry?.map(item => (
+                      <li key={item.resource.id}>{item.resource.medicationCodeableConcept?.text}</li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -366,10 +462,13 @@ export default function DashboardPage() {
                 <CardDescription>Known allergies and adverse reactions</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Allergy data will be implemented here</p>
-                </div>
+                {loadingClinical ? <p>Loading...</p> : (
+                  <ul>
+                    {clinicalData.allergies?.entry?.map(item => (
+                      <li key={item.resource.id}>{item.resource.code?.text}</li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
