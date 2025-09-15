@@ -86,12 +86,25 @@ export class EpicFHIRClient {
       scope: scopes.join(' '),
       state,
       code_challenge: codeChallenge,
-      code_challenge_method: 'S256',
-      aud: this.config.baseUrl
+      code_challenge_method: 'S256'
     });
 
+    const authUrl = `${this.config.authorizeUrl}?${params.toString()}`;
+
+    // Log auth URL generation for debugging (without sensitive data)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Generated auth URL:', {
+        clientId: this.config.clientId ? `${this.config.clientId.substring(0, 8)}...` : 'missing',
+        redirectUri: this.config.redirectUri,
+        scopes: scopes.join(' '),
+        state: state.substring(0, 8) + '...',
+        codeChallenge: codeChallenge.substring(0, 8) + '...',
+        fullUrl: authUrl
+      });
+    }
+
     return {
-      url: `${this.config.authorizeUrl}?${params.toString()}`,
+      url: authUrl,
       state: authState
     };
   }

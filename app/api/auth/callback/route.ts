@@ -18,9 +18,18 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
+    // Log all callback parameters for debugging
+    console.log('Auth callback received:', {
+      hasCode: !!code,
+      hasState: !!state,
+      error,
+      errorDescription,
+      fullUrl: request.url
+    });
+
     // Handle OAuth errors
     if (error) {
-      console.error('OAuth error:', error, errorDescription);
+      console.error('OAuth error from Epic:', error, errorDescription);
       return NextResponse.redirect(
         new URL(`/auth/error?error=${encodeURIComponent(error)}&description=${encodeURIComponent(errorDescription || '')}`, request.url)
       );

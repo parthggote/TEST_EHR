@@ -11,7 +11,7 @@ import { cookies } from 'next/headers';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const scopes = searchParams.get('scopes')?.split(',') || ['patient/*.read'];
+    const scopes = searchParams.get('scopes')?.split(',') || undefined; // Use default scopes from config
     
     // Generate authorization URL with PKCE
     const { EpicFHIRClient } = await import('@/lib/epic-client');
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Generate authorization URL with custom scopes
     const { EpicFHIRClient } = await import('@/lib/epic-client');
     const epicClient = new EpicFHIRClient();
-    const { url, state } = epicClient.generateAuthUrl(scopes || ['patient/*.read']);
+    const { url, state } = epicClient.generateAuthUrl(scopes || undefined); // Use default scopes from config
     
     // Store auth state securely
     const cookieStore = cookies();

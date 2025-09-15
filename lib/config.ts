@@ -26,6 +26,16 @@ export function getEpicConfig(): EpicConfig {
     testPatientId: process.env.TEST_PATIENT_ID || 'eq081-VQEgP8drUUqCWzHfw3'
   };
 
+  // Log config for debugging (without sensitive data)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Epic Config:', {
+      clientId: config.clientId ? `${config.clientId.substring(0, 8)}...` : 'missing',
+      redirectUri: config.redirectUri,
+      authorizeUrl: config.authorizeUrl,
+      useMockData: config.useMockData
+    });
+  }
+
   return config;
 }
 
@@ -43,6 +53,19 @@ export function validateEpicConfig(): { valid: boolean; errors: string[] } {
     if (!config.redirectUri.startsWith('http')) {
       errors.push('REDIRECT_URI must be a valid URL');
     }
+    
+    // Validate redirect URI format
+    try {
+      const url = new URL(config.redirectUri);
+      if (url.pathname !== '/auth/callback') {
+        errors.push('REDIRECT_URI must end with /auth/callback');
+      }
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        errors.push('REDIRECT_URI must use http or https protocol');
+      }
+    } catch {
+      errors.push('REDIRECT_URI is not a valid URL format');
+    }
   }
 
   return {
@@ -54,8 +77,6 @@ export function validateEpicConfig(): { valid: boolean; errors: string[] } {
 export function getEpicScopes(): string[] {
   return [
     'patient/*.read',
-    'user/*.read', 
-    'launch',
     'openid',
     'profile'
   ];

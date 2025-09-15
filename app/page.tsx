@@ -28,6 +28,13 @@ export default function LandingPage() {
               <Button 
                 variant="ghost" 
                 className="text-muted-foreground hover:text-foreground"
+                onClick={() => window.location.href = '/debug'}
+              >
+                Debug
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="text-muted-foreground hover:text-foreground"
                 onClick={() => window.location.href = '/api/auth/login'}
               >
                 Log In
