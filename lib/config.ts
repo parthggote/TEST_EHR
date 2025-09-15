@@ -15,9 +15,15 @@ export interface EpicConfig {
 }
 
 export function getEpicConfig(): EpicConfig {
+  // Prefer NEXTAUTH_URL for constructing the redirect URI to avoid mismatches
+  const baseUrl = (process.env.NEXTAUTH_URL || process.env.VERCEL_URL || '').replace(/\/$/, '');
+  const redirectUri = baseUrl
+    ? `${baseUrl}/api/auth/callback`
+    : process.env.REDIRECT_URI || 'https://test-ehr.vercel.app/api/auth/callback';
+
   const config: EpicConfig = {
     clientId: process.env.CLIENT_ID || '',
-    redirectUri: process.env.REDIRECT_URI || 'https://test-ehr.vercel.app/api/auth/callback',
+    redirectUri: redirectUri,
     baseUrl: process.env.FHIR_BASE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
     authorizeUrl: process.env.EPIC_AUTHORIZE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
     tokenUrl: process.env.EPIC_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
