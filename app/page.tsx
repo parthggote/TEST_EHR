@@ -33,17 +33,17 @@ export default function LandingPage() {
                 Debug
               </Button>
               <Button 
-                variant="ghost" 
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() => window.location.href = '/api/auth/login'}
-              >
-                Log In
-              </Button>
-              <Button 
                 className="bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={() => window.location.href = '/api/auth/login'}
               >
-                Login with Epic
+                Patient Login
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-blue-500 text-blue-400 hover:bg-blue-900/50 hover:text-blue-300"
+                onClick={() => window.location.href = '/api/auth/clinician/login'}
+              >
+                Clinician Portal
               </Button>
             </div>
           </div>
@@ -80,20 +80,20 @@ export default function LandingPage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700 hover:text-white"
-                onClick={() => window.location.href = '/demo'}
-              >
-                View Live Demo
-              </Button>
               <Button 
                 size="lg" 
                 className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={() => window.location.href = '/api/auth/login'}
               >
-                Connect to Epic MyChart
+                Patient Portal Login
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto bg-transparent border-blue-500 text-blue-400 hover:bg-blue-900/50 hover:text-blue-300"
+                onClick={() => window.location.href = '/api/auth/clinician/login'}
+              >
+                Clinician Portal Login
               </Button>
             </div>
           </div>

@@ -14,27 +14,44 @@ export interface EpicConfig {
   testPatientId: string;
 }
 
-export function getEpicConfig(): EpicConfig {
-  // Prefer NEXTAUTH_URL for constructing the redirect URI to avoid mismatches
+export type UserType = 'patient' | 'clinician';
+
+export function getEpicConfig(userType: UserType = 'patient'): EpicConfig {
   const baseUrl = (process.env.NEXTAUTH_URL || process.env.VERCEL_URL || '').replace(/\/$/, '');
-  const redirectUri = baseUrl
-    ? `${baseUrl}/api/auth/callback`
-    : process.env.REDIRECT_URI || 'https://test-ehr.vercel.app/api/auth/callback';
 
-  const config: EpicConfig = {
-    clientId: process.env.CLIENT_ID || '',
-    redirectUri: redirectUri,
-    baseUrl: process.env.FHIR_BASE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
-    authorizeUrl: process.env.EPIC_AUTHORIZE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
-    tokenUrl: process.env.EPIC_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
-    encryptionKey: process.env.ENCRYPTION_KEY || '',
-    useMockData: process.env.USE_MOCK_DATA === 'true' || (!process.env.CLIENT_ID && process.env.USE_MOCK_DATA !== 'false'),
-    testPatientId: process.env.TEST_PATIENT_ID || 'eq081-VQEgP8drUUqCWzHfw3'
-  };
+  let config: EpicConfig;
 
-  // Log config for debugging (without sensitive data)
+  if (userType === 'clinician') {
+    const redirectUri = process.env.EPIC_CLINICIAN_REDIRECT_URI || `${baseUrl}/api/auth/clinician/callback`;
+    config = {
+      clientId: process.env.EPIC_CLINICIAN_CLIENT_ID || '',
+      redirectUri: redirectUri,
+      baseUrl: process.env.FHIR_BASE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
+      authorizeUrl: process.env.EPIC_CLINICIAN_AUTHORIZE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
+      tokenUrl: process.env.EPIC_CLINICIAN_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
+      encryptionKey: process.env.ENCRYPTION_KEY || '',
+      useMockData: false, // Clinician flow should not use mock data
+      testPatientId: '' // Not applicable for clinician flow
+    };
+  } else {
+    const redirectUri = baseUrl
+      ? `${baseUrl}/api/auth/callback`
+      : process.env.REDIRECT_URI || 'https://test-ehr.vercel.app/api/auth/callback';
+
+    config = {
+      clientId: process.env.CLIENT_ID || '',
+      redirectUri: redirectUri,
+      baseUrl: process.env.FHIR_BASE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
+      authorizeUrl: process.env.EPIC_AUTHORIZE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
+      tokenUrl: process.env.EPIC_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
+      encryptionKey: process.env.ENCRYPTION_KEY || '',
+      useMockData: process.env.USE_MOCK_DATA === 'true' || (!process.env.CLIENT_ID && process.env.USE_MOCK_DATA !== 'false'),
+      testPatientId: process.env.TEST_PATIENT_ID || 'eq081-VQEgP8drUUqCWzHfw3'
+    };
+  }
+
   if (process.env.NODE_ENV === 'development') {
-    console.log('Epic Config:', {
+    console.log(`Epic Config (${userType}):`, {
       clientId: config.clientId ? `${config.clientId.substring(0, 8)}...` : 'missing',
       redirectUri: config.redirectUri,
       authorizeUrl: config.authorizeUrl,
@@ -45,32 +62,25 @@ export function getEpicConfig(): EpicConfig {
   return config;
 }
 
-export function validateEpicConfig(): { valid: boolean; errors: string[] } {
-  const config = getEpicConfig();
+export function validateEpicConfig(userType: UserType = 'patient'): { valid: boolean; errors: string[] } {
+  const config = getEpicConfig(userType);
   const errors: string[] = [];
 
   if (!config.useMockData) {
     if (!config.clientId) {
-      errors.push('CLIENT_ID is required for real Epic API integration');
+      errors.push(`CLIENT_ID for ${userType} is required for real Epic API integration`);
     }
     if (!config.encryptionKey || config.encryptionKey.length < 32) {
       errors.push('ENCRYPTION_KEY must be at least 32 characters long');
     }
-    if (!config.redirectUri.startsWith('https')) {
-      errors.push('REDIRECT_URI must be a valid URL');
-    }
     
-    // Validate redirect URI format
     try {
       const url = new URL(config.redirectUri);
-      if (url.pathname !== '/api/auth/callback') {
-        errors.push('REDIRECT_URI must end with /api/auth/callback');
-      }
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        errors.push('REDIRECT_URI must use http or https protocol');
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+        errors.push(`REDIRECT_URI for ${userType} must use https or http protocol`);
       }
     } catch {
-      errors.push('REDIRECT_URI is not a valid URL format');
+      errors.push(`REDIRECT_URI for ${userType} is not a valid URL format`);
     }
   }
 
@@ -80,8 +90,14 @@ export function validateEpicConfig(): { valid: boolean; errors: string[] } {
   };
 }
 
-export function getEpicScopes(): string[] {
-  // Using specific scopes based on Epic app configuration
+export function getEpicScopes(userType: UserType = 'patient'): string[] {
+  if (userType === 'clinician') {
+    // Scopes are space-separated in the env variable
+    const scopesString = process.env.EPIC_CLINICIAN_SCOPES || "openid profile launch offline_access user/Patient.read user/Patient.write user/Appointment.read user/Appointment.write user/Observation.read user/Observation.write user/Condition.read user/Condition.write user/AllergyIntolerance.read user/AllergyIntolerance.write user/Immunization.read user/Immunization.write user/DocumentReference.read user/DocumentReference.write user/MedicationRequest.read user/MedicationRequest.write user/Coverage.read user/ExplanationOfBenefit.read user/Account.read";
+    return scopesString.split(' ');
+  }
+
+  // Patient scopes
   return [
     'patient/Patient.Read',
     'patient/Patient.Search',
