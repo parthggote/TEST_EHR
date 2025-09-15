@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   Home,
+  Download,
 } from "lucide-react"
 import {
   DropdownMenu,
