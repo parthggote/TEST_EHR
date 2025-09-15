@@ -50,7 +50,7 @@ export function validateEpicConfig(): { valid: boolean; errors: string[] } {
     if (!config.encryptionKey || config.encryptionKey.length < 32) {
       errors.push('ENCRYPTION_KEY must be at least 32 characters long');
     }
-    if (!config.redirectUri.startsWith('http')) {
+    if (!config.redirectUri.startsWith('https')) {
       errors.push('REDIRECT_URI must be a valid URL');
     }
     
