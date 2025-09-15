@@ -1,0 +1,407 @@
+{
+  "info": {
+    "name": "Epic FHIR Integration Dashboard",
+    "description": "Collection for testing Epic FHIR API endpoints through the dashboard",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "epic_base_url",
+      "value": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "your_client_id_here",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "eq081-VQEgP8drUUqCWzHfw3",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "1. Get Auth URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Redirects to Epic OAuth2 authorization URL"
+          }
+        },
+        {
+          "name": "2. Check Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/session",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "session"]
+            },
+            "description": "Check current authentication session"
+          }
+        },
+        {
+          "name": "3. Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Clear authentication session"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard API",
+      "item": [
+        {
+          "name": "Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients?family=Smith&given=John",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients"],
+              "query": [
+                {
+                  "key": "family",
+                  "value": "Smith"
+                },
+                {
+                  "key": "given",
+                  "value": "John"
+                }
+              ]
+            },
+            "description": "Search for patients by name"
+          }
+        },
+        {
+          "name": "Get Patient by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients?id={{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{patient_id}}"
+                }
+              ]
+            },
+            "description": "Get specific patient by ID"
+          }
+        },
+        {
+          "name": "Get Patient Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "appointments"]
+            },
+            "description": "Get appointments for a specific patient"
+          }
+        },
+        {
+          "name": "Get Patient Clinical Data - All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/clinical?type=all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "clinical"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "all"
+                }
+              ]
+            },
+            "description": "Get all clinical data for a patient"
+          }
+        },
+        {
+          "name": "Get Patient Observations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/clinical?type=observations&category=vital-signs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "clinical"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "observations"
+                },
+                {
+                  "key": "category",
+                  "value": "vital-signs"
+                }
+              ]
+            },
+            "description": "Get patient vital signs and observations"
+          }
+        },
+        {
+          "name": "Get Patient Conditions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/clinical?type=conditions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "clinical"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "conditions"
+                }
+              ]
+            },
+            "description": "Get patient conditions and diagnoses"
+          }
+        },
+        {
+          "name": "Get Patient Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/clinical?type=medications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "clinical"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "medications"
+                }
+              ]
+            },
+            "description": "Get patient medications"
+          }
+        },
+        {
+          "name": "Get Patient Allergies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/clinical?type=allergies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "clinical"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "allergies"
+                }
+              ]
+            },
+            "description": "Get patient allergies and intolerances"
+          }
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Appointment\",\n  \"status\": \"booked\",\n  \"serviceType\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://terminology.hl7.org/CodeSystem/service-type\",\n          \"code\": \"124\",\n          \"display\": \"General Practice\"\n        }\n      ]\n    }\n  ],\n  \"description\": \"Follow-up appointment\",\n  \"start\": \"2024-12-01T10:00:00Z\",\n  \"end\": \"2024-12-01T10:30:00Z\",\n  \"minutesDuration\": 30,\n  \"participant\": [\n    {\n      \"actor\": {\n        \"reference\": \"Patient/{{patient_id}}\",\n        \"display\": \"Test Patient\"\n      },\n      \"required\": \"required\",\n      \"status\": \"accepted\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/fhir/patients/{{patient_id}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "fhir", "patients", "{{patient_id}}", "appointments"]
+            },
+            "description": "Create a new appointment for a patient"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Direct Epic FHIR API",
+      "item": [
+        {
+          "name": "Epic - Get Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json"
+              }
+            ],
+            "url": {
+              "raw": "{{epic_base_url}}/Patient/{{patient_id}}",
+              "host": ["{{epic_base_url}}"],
+              "path": ["Patient", "{{patient_id}}"]
+            },
+            "description": "Direct call to Epic FHIR API to get patient data"
+          }
+        },
+        {
+          "name": "Epic - Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json"
+              }
+            ],
+            "url": {
+              "raw": "{{epic_base_url}}/Patient?family=Fhir&given=Jason",
+              "host": ["{{epic_base_url}}"],
+              "path": ["Patient"],
+              "query": [
+                {
+                  "key": "family",
+                  "value": "Fhir"
+                },
+                {
+                  "key": "given",
+                  "value": "Jason"
+                }
+              ]
+            },
+            "description": "Search for test patient in Epic sandbox"
+          }
+        },
+        {
+          "name": "Epic - Get Patient Observations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json"
+              }
+            ],
+            "url": {
+              "raw": "{{epic_base_url}}/Observation?patient={{patient_id}}&category=vital-signs",
+              "host": ["{{epic_base_url}}"],
+              "path": ["Observation"],
+              "query": [
+                {
+                  "key": "patient",
+                  "value": "{{patient_id}}"
+                },
+                {
+                  "key": "category",
+                  "value": "vital-signs"
+                }
+              ]
+            },
+            "description": "Get patient vital signs from Epic"
+          }
+        },
+        {
+          "name": "Epic - Get Patient Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json"
+              }
+            ],
+            "url": {
+              "raw": "{{epic_base_url}}/Appointment?patient={{patient_id}}",
+              "host": ["{{epic_base_url}}"],
+              "path": ["Appointment"],
+              "query": [
+                {
+                  "key": "patient",
+                  "value": "{{patient_id}}"
+                }
+              ]
+            },
+            "description": "Get patient appointments from Epic"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL based on environment",
+          "if (pm.environment.get('environment') === 'production') {",
+          "    pm.variables.set('base_url', 'https://your-production-domain.com');",
+          "} else {",
+          "    pm.variables.set('base_url', 'http://localhost:3000');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Basic response validation",
+          "pm.test('Status code is successful', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 302]);",
+          "});",
+          "",
+          "// Extract access token from session response",
+          "if (pm.response.json() && pm.response.json().access_token) {",
+          "    pm.variables.set('access_token', pm.response.json().access_token);",
+          "}"
+        ]
+      }
+    }
+  ]
+}
