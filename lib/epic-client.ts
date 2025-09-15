@@ -16,16 +16,20 @@ import { getEpicConfig, getEpicScopes } from './config';
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 
+import { UserType } from './config';
+
 export class EpicFHIRClient {
   private config: ReturnType<typeof getEpicConfig>;
+  private userType: UserType;
 
-  constructor() {
-    this.config = getEpicConfig();
+  constructor(userType: UserType = 'patient') {
+    this.userType = userType;
+    this.config = getEpicConfig(this.userType);
 
     // Only validate configuration at runtime, not during build
     if (typeof window !== 'undefined' || process.env.NODE_ENV === 'development') {
-      if (!this.config.useMockData && (!this.config.clientId || !this.config.encryptionKey)) {
-        console.warn('Missing Epic FHIR configuration. Using mock data for development.');
+      if (this.userType === 'patient' && !this.config.useMockData && (!this.config.clientId || !this.config.encryptionKey)) {
+        console.warn('Missing Epic FHIR configuration for patient. Using mock data for development.');
         this.config.useMockData = true;
       }
     }
@@ -68,7 +72,8 @@ export class EpicFHIRClient {
   /**
    * Generate authorization URL for SMART on FHIR OAuth2 flow
    */
-  generateAuthUrl(scopes: string[] = getEpicScopes()): { url: string; state: EpicAuthState } {
+  generateAuthUrl(scopes?: string[]): { url: string; state: EpicAuthState } {
+    const resolvedScopes = scopes || getEpicScopes(this.userType);
     const { codeVerifier, codeChallenge } = this.generatePKCE();
     const state = uuidv4();
     
@@ -83,7 +88,7 @@ export class EpicFHIRClient {
       response_type: 'code',
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
-      scope: scopes.join(' '),
+      scope: resolvedScopes.join(' '),
       state,
       code_challenge: codeChallenge,
       code_challenge_method: 'S256'
@@ -313,6 +318,26 @@ export class EpicFHIRClient {
     return this.makeRequest<Patient>(`Patient/${patientId}`, accessToken);
   }
 
+  async createPatient(accessToken: string, patient: Partial<Patient>): Promise<Patient> {
+    return this.makeRequest<Patient>('Patient', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(patient)
+    });
+  }
+
+  async updatePatient(accessToken: string, patient: Patient): Promise<Patient> {
+    return this.makeRequest<Patient>(`Patient/${patient.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(patient)
+    });
+  }
+
+  async deletePatient(accessToken: string, patientId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`Patient/${patientId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
   // Appointment Operations
   async getPatientAppointments(
     accessToken: string, 
@@ -342,7 +367,48 @@ export class EpicFHIRClient {
     });
   }
 
+  async updateAppointment(accessToken: string, appointment: Appointment): Promise<Appointment> {
+    return this.makeRequest<Appointment>(`Appointment/${appointment.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(appointment)
+    });
+  }
+
+  async deleteAppointment(accessToken: string, appointmentId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`Appointment/${appointmentId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
+  async getAppointment(accessToken: string, appointmentId: string): Promise<Appointment> {
+    return this.makeRequest<Appointment>(`Appointment/${appointmentId}`, accessToken);
+  }
+
   // Clinical Data Operations
+  async createCondition(accessToken: string, condition: Partial<Condition>): Promise<Condition> {
+    return this.makeRequest<Condition>('Condition', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(condition)
+    });
+  }
+
+  async getCondition(accessToken: string, conditionId: string): Promise<Condition> {
+    return this.makeRequest<Condition>(`Condition/${conditionId}`, accessToken);
+  }
+
+  async updateCondition(accessToken: string, condition: Condition): Promise<Condition> {
+    return this.makeRequest<Condition>(`Condition/${condition.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(condition)
+    });
+  }
+
+  async deleteCondition(accessToken: string, conditionId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`Condition/${conditionId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
   async getPatientObservations(
     accessToken: string, 
     patientId: string,
