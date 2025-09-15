@@ -404,6 +404,55 @@ export class EpicFHIRClient {
     return this.makeRequest<FHIRBundle>(`AllergyIntolerance?patient=${patientId}`, accessToken);
   }
 
+  async getPatientImmunizations(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    if (this.config.useMockData) {
+      // Mock data logic would go here
+      return { resourceType: 'Bundle', entry: [] };
+    }
+    return this.makeRequest<FHIRBundle>(`Immunization?patient=${patientId}`, accessToken);
+  }
+
+  async getPatientDiagnosticReports(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    if (this.config.useMockData) {
+      // Mock data logic would go here
+      return { resourceType: 'Bundle', entry: [] };
+    }
+    return this.makeRequest<FHIRBundle>(`DiagnosticReport?patient=${patientId}`, accessToken);
+  }
+
+  async getPatientDocumentReferences(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    if (this.config.useMockData) {
+      // Mock data logic would go here
+      return { resourceType: 'Bundle', entry: [] };
+    }
+    return this.makeRequest<FHIRBundle>(`DocumentReference?patient=${patientId}`, accessToken);
+  }
+
+  async getPatientProcedures(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    if (this.config.useMockData) {
+      // Mock data logic would go here
+      return { resourceType: 'Bundle', entry: [] };
+    }
+    return this.makeRequest<FHIRBundle>(`Procedure?patient=${patientId}`, accessToken);
+  }
+
+  // Billing Operations
+  async getPatientCoverage(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    if (this.config.useMockData) {
+      // Mock data logic would go here
+      return { resourceType: 'Bundle', entry: [] };
+    }
+    return this.makeRequest<FHIRBundle>(`Coverage?patient=${patientId}`, accessToken);
+  }
+
+  async getPatientExplanationOfBenefit(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    if (this.config.useMockData) {
+      // Mock data logic would go here
+      return { resourceType: 'Bundle', entry: [] };
+    }
+    return this.makeRequest<FHIRBundle>(`ExplanationOfBenefit?patient=${patientId}`, accessToken);
+  }
+
   // Utility Methods
   private auditLog(event: string, data: any): void {
     // In production, this should write to a secure audit log
