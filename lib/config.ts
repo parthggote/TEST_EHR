@@ -81,8 +81,28 @@ export function validateEpicConfig(): { valid: boolean; errors: string[] } {
 }
 
 export function getEpicScopes(): string[] {
+  // Using specific scopes based on Epic app configuration
   return [
-    'patient/*.read',
+    'patient/Patient.Read',
+    'patient/Patient.Search',
+    'patient/AllergyIntolerance.Read',
+    'patient/AllergyIntolerance.Search',
+    'patient/MedicationRequest.Read',
+    'patient/MedicationRequest.Search',
+    'patient/Condition.Read',
+    'patient/Condition.Search',
+    'patient/Appointment.Read',
+    'patient/Appointment.Search',
+    'patient/Observation.Read',
+    'patient/Observation.Search',
+    'patient/Immunization.Read',
+    'patient/Immunization.Search',
+    'patient/DocumentReference.Read',
+    'patient/DocumentReference.Search',
+    'patient/Coverage.Read',
+    'patient/Coverage.Search',
+    'patient/ExplanationOfBenefit.Read',
+    'patient/ExplanationOfBenefit.Search',
     'openid',
     'profile'
   ];
