@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,59 +9,130 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { FileText, Activity, Syringe, TestTube, Plus, TrendingUp, TrendingDown } from "lucide-react"
-import { DocumentReference, Observation, DiagnosticReport, Immunization, FHIRBundle } from "@/lib/types/fhir"
+
+// Mock clinical data
+const clinicalNotes = [
+  {
+    id: "N001",
+    date: "2024-01-15",
+    provider: "Dr. Smith",
+    patient: "Sarah Johnson",
+    type: "Progress Note",
+    content:
+      "Patient reports feeling well. Blood pressure controlled on current medication. Continue current treatment plan.",
+    tags: ["Hypertension", "Follow-up"],
+  },
+  {
+    id: "N002",
+    date: "2024-01-14",
+    provider: "Dr. Johnson",
+    patient: "Michael Chen",
+    type: "Consultation",
+    content: "New patient consultation for chest pain. EKG normal. Recommend stress test and lipid panel.",
+    tags: ["Chest Pain", "Cardiology"],
+  },
+  {
+    id: "N003",
+    date: "2024-01-13",
+    provider: "Dr. Smith",
+    patient: "Emma Davis",
+    type: "Annual Physical",
+    content: "Annual physical examination. All systems normal. Discussed preventive care and lifestyle modifications.",
+    tags: ["Preventive Care", "Annual"],
+  },
+]
+
+const vitalsData = [
+  { date: "Jan 1", systolic: 120, diastolic: 80, heartRate: 72, weight: 150 },
+  { date: "Jan 8", systolic: 118, diastolic: 78, heartRate: 70, weight: 149 },
+  { date: "Jan 15", systolic: 122, diastolic: 82, heartRate: 74, weight: 151 },
+  { date: "Jan 22", systolic: 119, diastolic: 79, heartRate: 71, weight: 150 },
+  { date: "Jan 29", systolic: 121, diastolic: 81, heartRate: 73, weight: 148 },
+]
+
+const labResults = [
+  {
+    id: "L001",
+    test: "Complete Blood Count",
+    result: "Normal",
+    normalRange: "4.5-11.0 K/uL",
+    value: "7.2 K/uL",
+    date: "2024-01-15",
+    status: "Final",
+  },
+  {
+    id: "L002",
+    test: "Lipid Panel",
+    result: "Elevated",
+    normalRange: "<200 mg/dL",
+    value: "245 mg/dL",
+    date: "2024-01-14",
+    status: "Final",
+  },
+  {
+    id: "L003",
+    test: "HbA1c",
+    result: "Normal",
+    normalRange: "<5.7%",
+    value: "5.4%",
+    date: "2024-01-12",
+    status: "Final",
+  },
+  {
+    id: "L004",
+    test: "Thyroid Function",
+    result: "Pending",
+    normalRange: "0.4-4.0 mIU/L",
+    value: "Pending",
+    date: "2024-01-15",
+    status: "Pending",
+  },
+]
+
+const immunizations = [
+  {
+    id: "I001",
+    vaccine: "COVID-19 Booster",
+    date: "2023-12-15",
+    status: "Completed",
+    nextDue: "2024-12-15",
+    provider: "Dr. Smith",
+  },
+  {
+    id: "I002",
+    vaccine: "Influenza",
+    date: "2023-10-01",
+    status: "Completed",
+    nextDue: "2024-10-01",
+    provider: "Dr. Johnson",
+  },
+  {
+    id: "I003",
+    vaccine: "Tdap",
+    date: "2021-03-15",
+    status: "Completed",
+    nextDue: "2031-03-15",
+    provider: "Dr. Smith",
+  },
+  {
+    id: "I004",
+    vaccine: "Pneumococcal",
+    date: null,
+    status: "Due",
+    nextDue: "2024-02-01",
+    provider: null,
+  },
+]
 
 export default function ClinicalPage() {
-  const [clinicalNotes, setClinicalNotes] = useState<DocumentReference[]>([])
-  const [vitals, setVitals] = useState<Observation[]>([])
-  const [labResults, setLabResults] = useState<DiagnosticReport[]>([])
-  const [immunizations, setImmunizations] = useState<Immunization[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // A patient ID would normally come from a context or prop
-  const patientId = "ew2oPE1g5V2zGofR3J1D2Q3" // Example patient ID
-
-  useEffect(() => {
-    const fetchClinicalData = async () => {
-      try {
-        setLoading(true)
-        const [notesRes, vitalsRes, labsRes, immunizationsRes] = await Promise.all([
-          fetch(`/api/fhir/documentreferences?patient=${patientId}`),
-          fetch(`/api/fhir/observations?patient=${patientId}&category=vital-signs`),
-          fetch(`/api/fhir/diagnosticreports?patient=${patientId}`),
-          fetch(`/api/fhir/immunizations?patient=${patientId}`),
-        ])
-
-        const notesData: FHIRBundle<DocumentReference> = await notesRes.json()
-        const vitalsData: FHIRBundle<Observation> = await vitalsRes.json()
-        const labsData: FHIRBundle<DiagnosticReport> = await labsRes.json()
-        const immunizationsData: FHIRBundle<Immunization> = await immunizationsRes.json()
-
-        setClinicalNotes(notesData.entry?.map(e => e.resource) || [])
-        setVitals(vitalsData.entry?.map(e => e.resource) || [])
-        setLabResults(labsData.entry?.map(e => e.resource) || [])
-        setImmunizations(immunizationsData.entry?.map(e => e.resource) || [])
-
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "An unknown error occurred")
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (patientId) {
-      fetchClinicalData()
-    }
-  }, [patientId])
+  const [selectedPatient, setSelectedPatient] = useState("All Patients")
 
   const getResultColor = (result: string) => {
     switch (result) {
       case "Normal":
-      case "normal":
         return "text-green-600"
       case "Elevated":
       case "Low":
-      case "Abnormal":
         return "text-yellow-600"
       case "Critical":
         return "text-red-600"
@@ -74,25 +145,15 @@ export default function ClinicalPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "Completed":
         return "bg-green-500"
-      case "not-done":
+      case "Due":
         return "bg-yellow-500"
-      case "entered-in-error":
+      case "Overdue":
         return "bg-red-500"
       default:
         return "bg-gray-500"
     }
-  }
-
-  const formatVitalsForChart = (vitals: Observation[]) => {
-    // This is a simplified transformation. A real implementation would need more robust logic
-    // to handle different vital signs and units.
-    return vitals.map(vital => ({
-      date: new Date(vital.effectiveDateTime!).toLocaleDateString(),
-      systolic: vital.component?.find(c => c.code.coding?.[0].code === '8480-6')?.valueQuantity?.value,
-      diastolic: vital.component?.find(c => c.code.coding?.[0].code === '8462-4')?.valueQuantity?.value,
-    })).slice(0, 10) // Limit for display
   }
 
   return (
@@ -104,7 +165,7 @@ export default function ClinicalPage() {
             <h1 className="text-3xl font-bold text-foreground">Clinical Data</h1>
             <p className="text-muted-foreground">Manage clinical notes, vitals, lab results, and immunizations</p>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled>
+          <Button className="bg-purple-600 hover:bg-purple-700 text-white">
             <Plus className="w-4 h-4 mr-2" />
             Add Clinical Note
           </Button>
@@ -127,25 +188,30 @@ export default function ClinicalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? <p>Loading...</p> : error ? <p className="text-red-500">{error}</p> : (
-                  <div className="space-y-4">
-                    {clinicalNotes.map((note) => (
-                      <Card key={note.id} className="bg-muted/30">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h4 className="font-medium text-foreground">{note.type?.text}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(note.date!).toLocaleDateString()}
-                              </p>
-                            </div>
+                <div className="space-y-4">
+                  {clinicalNotes.map((note) => (
+                    <Card key={note.id} className="bg-muted/30">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium text-foreground">{note.type}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {note.patient} • {note.provider} • {note.date}
+                            </p>
                           </div>
-                          <p className="text-sm text-foreground leading-relaxed">{note.description}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                          <div className="flex gap-1">
+                            {note.tags.map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -161,7 +227,7 @@ export default function ClinicalPage() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={formatVitalsForChart(vitals)}>
+                    <LineChart data={vitalsData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="date" className="text-muted-foreground" />
                       <YAxis className="text-muted-foreground" />
@@ -180,7 +246,54 @@ export default function ClinicalPage() {
               </Card>
 
               <div className="space-y-4">
-                {/* Simplified vitals display */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Latest Vitals</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Blood Pressure</span>
+                      <div className="flex items-center">
+                        <span className="font-medium">121/81</span>
+                        <TrendingUp className="w-4 h-4 ml-1 text-green-500" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Heart Rate</span>
+                      <div className="flex items-center">
+                        <span className="font-medium">73 bpm</span>
+                        <TrendingDown className="w-4 h-4 ml-1 text-blue-500" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Weight</span>
+                      <div className="flex items-center">
+                        <span className="font-medium">148 lbs</span>
+                        <TrendingDown className="w-4 h-4 ml-1 text-green-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Vital Signs History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {vitalsData.slice(-3).map((vital, index) => (
+                        <div key={index} className="text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">{vital.date}</span>
+                            <span className="font-medium">
+                              {vital.systolic}/{vital.diastolic}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
@@ -194,32 +307,34 @@ export default function ClinicalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? <p>Loading...</p> : error ? <p className="text-red-500">{error}</p> : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Test</TableHead>
-                        <TableHead>Result</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Test</TableHead>
+                      <TableHead>Result</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Normal Range</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {labResults.map((lab) => (
+                      <TableRow key={lab.id}>
+                        <TableCell className="font-medium">{lab.test}</TableCell>
+                        <TableCell>
+                          <span className={getResultColor(lab.result)}>{lab.result}</span>
+                        </TableCell>
+                        <TableCell className="font-mono">{lab.value}</TableCell>
+                        <TableCell className="text-muted-foreground">{lab.normalRange}</TableCell>
+                        <TableCell>{lab.date}</TableCell>
+                        <TableCell>
+                          <Badge variant={lab.status === "Final" ? "default" : "secondary"}>{lab.status}</Badge>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {labResults.map((lab) => (
-                        <TableRow key={lab.id}>
-                          <TableCell className="font-medium">{lab.code.text}</TableCell>
-                          <TableCell>
-                            <span className={getResultColor(lab.conclusion!)}>{lab.conclusion}</span>
-                          </TableCell>
-                          <TableCell>{new Date(lab.effectiveDateTime!).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Badge variant={lab.status === "final" ? "default" : "secondary"}>{lab.status}</Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -233,31 +348,31 @@ export default function ClinicalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? <p>Loading...</p> : error ? <p className="text-red-500">{error}</p> : (
-                  <div className="space-y-4">
-                    {immunizations.map((immunization) => (
-                      <div key={immunization.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-3 h-3 rounded-full ${getStatusColor(immunization.status)}`} />
-                          <div>
-                            <p className="font-medium text-foreground">{immunization.vaccineCode.text}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {immunization.occurrenceDateTime ? `Given: ${new Date(immunization.occurrenceDateTime).toLocaleDateString()}` : "Not administered"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge
-                            variant="outline"
-                            className={`${getStatusColor(immunization.status)} text-white border-0`}
-                          >
-                            {immunization.status}
-                          </Badge>
+                <div className="space-y-4">
+                  {immunizations.map((immunization) => (
+                    <div key={immunization.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-3 h-3 rounded-full ${getStatusColor(immunization.status)}`} />
+                        <div>
+                          <p className="font-medium text-foreground">{immunization.vaccine}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {immunization.date ? `Given: ${immunization.date}` : "Not administered"}
+                            {immunization.provider && ` • ${immunization.provider}`}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="text-right">
+                        <Badge
+                          variant="outline"
+                          className={`${getStatusColor(immunization.status)} text-white border-0`}
+                        >
+                          {immunization.status}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">Next due: {immunization.nextDue}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

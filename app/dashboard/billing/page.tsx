@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,73 +20,95 @@ import {
 } from "@/components/ui/dialog"
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
 import { DollarSign, CreditCard, FileText, Plus, Search, TrendingUp, TrendingDown, Shield } from "lucide-react"
-import { ExplanationOfBenefit, Coverage, FHIRBundle, Patient } from "@/lib/types/fhir"
+
+// Mock billing data
+const balanceData = [
+  { name: "Insurance", value: 125000, color: "#8b5cf6" },
+  { name: "Patient", value: 45000, color: "#06b6d4" },
+  { name: "Pending", value: 30000, color: "#f59e0b" },
+]
+
+const monthlyRevenue = [
+  { month: "Jul", revenue: 45000 },
+  { month: "Aug", revenue: 52000 },
+  { month: "Sep", revenue: 48000 },
+  { month: "Oct", revenue: 61000 },
+  { month: "Nov", revenue: 55000 },
+  { month: "Dec", revenue: 67000 },
+]
+
+const transactions = [
+  {
+    id: "T001",
+    patient: "Sarah Johnson",
+    patientId: "P001",
+    date: "2024-01-15",
+    code: "99213",
+    description: "Office Visit - Established Patient",
+    amount: 150.0,
+    insurance: 120.0,
+    patient: 30.0,
+    status: "Paid",
+  },
+  {
+    id: "T002",
+    patient: "Michael Chen",
+    patientId: "P002",
+    date: "2024-01-14",
+    code: "80053",
+    description: "Comprehensive Metabolic Panel",
+    amount: 85.0,
+    insurance: 68.0,
+    patient: 17.0,
+    status: "Pending",
+  },
+  {
+    id: "T003",
+    patient: "Emma Davis",
+    patientId: "P003",
+    date: "2024-01-13",
+    code: "99214",
+    description: "Office Visit - Detailed",
+    amount: 200.0,
+    insurance: 160.0,
+    patient: 40.0,
+    status: "Submitted",
+  },
+  {
+    id: "T004",
+    patient: "James Wilson",
+    patientId: "P004",
+    date: "2024-01-12",
+    code: "93000",
+    description: "Electrocardiogram",
+    amount: 75.0,
+    insurance: 60.0,
+    patient: 15.0,
+    status: "Denied",
+  },
+]
 
 export default function BillingPage() {
-  const [transactions, setTransactions] = useState<ExplanationOfBenefit[]>([])
-  const [coverage, setCoverage] = useState<Coverage[]>([])
-  const [patients, setPatients] = useState<Patient[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isAddChargeOpen, setIsAddChargeOpen] = useState(false)
   const [isInsuranceCheckOpen, setIsInsuranceCheckOpen] = useState(false)
 
-  // A patient ID would normally come from a context or prop
-  const patientId = "ew2oPE1g5V2zGofR3J1D2Q3" // Example patient ID
-
-  useEffect(() => {
-    const fetchBillingData = async () => {
-      try {
-        setLoading(true)
-        const [transactionsRes, coverageRes, patientsRes] = await Promise.all([
-          fetch(`/api/fhir/explanationofbenefit?patient=${patientId}`),
-          fetch(`/api/fhir/coverage?patient=${patientId}`),
-          fetch(`/api/fhir/patients`),
-        ])
-
-        const transactionsData: FHIRBundle<ExplanationOfBenefit> = await transactionsRes.json()
-        const coverageData: FHIRBundle<Coverage> = await coverageRes.json()
-        const patientsData: FHIRBundle<Patient> = await patientsRes.json()
-
-        setTransactions(transactionsData.entry?.map(e => e.resource) || [])
-        setCoverage(coverageData.entry?.map(e => e.resource) || [])
-        setPatients(patientsData.entry?.map(e => e.resource) || [])
-
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "An unknown error occurred")
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (patientId) {
-      fetchBillingData()
-    }
-  }, [patientId])
-
-  const getPatientName = (patientId: string) => {
-    const patient = patients.find(p => p.id === patientId.replace("Patient/", ""))
-    return patient?.name?.[0] ? `${patient.name[0].given?.join(" ")} ${patient.name[0].family}` : "Unknown Patient"
-  }
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "Paid":
         return "bg-green-500"
-      case "cancelled":
+      case "Pending":
         return "bg-yellow-500"
-      case "draft":
+      case "Submitted":
         return "bg-blue-500"
-      case "entered-in-error":
+      case "Denied":
         return "bg-red-500"
       default:
         return "bg-gray-500"
     }
   }
 
-  // These calculations would need to be derived from the fetched ExplanationOfBenefit data
-  const totalBilled = transactions.reduce((sum, t) => sum + (t.total?.[0].amount.value || 0), 0)
-  const insurancePortion = transactions.reduce((sum, t) => sum + (t.total?.[1]?.amount.value || 0), 0)
-  const patientPortion = transactions.reduce((sum, t) => sum + (t.total?.[2]?.amount.value || 0), 0)
+  const totalRevenue = monthlyRevenue.reduce((sum, month) => sum + month.revenue, 0)
+  const totalBalance = balanceData.reduce((sum, item) => sum + item.value, 0)
 
   return (
     <DashboardLayout>
@@ -100,7 +122,7 @@ export default function BillingPage() {
           <div className="flex gap-2">
             <Dialog open={isInsuranceCheckOpen} onOpenChange={setIsInsuranceCheckOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="bg-transparent" disabled>
+                <Button variant="outline" className="bg-transparent">
                   <Shield className="w-4 h-4 mr-2" />
                   Check Insurance
                 </Button>
@@ -108,25 +130,26 @@ export default function BillingPage() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Insurance Eligibility Check</DialogTitle>
-                  <DialogDescription>This feature is not yet implemented.</DialogDescription>
+                  <DialogDescription>Verify patient insurance coverage and benefits</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="patient">Patient</Label>
-                    <Select disabled>
+                    <Select>
                       <SelectTrigger>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       <SelectContent>
-                        {patients.map(p => (
-                          <SelectItem key={p.id} value={p.id!}>{p.name?.[0] ? `${p.name[0].given?.join(" ")} ${p.name[0].family}` : "N/A"}</SelectItem>
-                        ))}
+                        <SelectItem value="P001">Sarah Johnson</SelectItem>
+                        <SelectItem value="P002">Michael Chen</SelectItem>
+                        <SelectItem value="P003">Emma Davis</SelectItem>
+                        <SelectItem value="P004">James Wilson</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="payer">Insurance Payer</Label>
-                    <Select disabled>
+                    <Select>
                       <SelectTrigger>
                         <SelectValue placeholder="Select payer" />
                       </SelectTrigger>
@@ -142,7 +165,7 @@ export default function BillingPage() {
                     <Button variant="outline" onClick={() => setIsInsuranceCheckOpen(false)}>
                       Cancel
                     </Button>
-                    <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled>Check Eligibility</Button>
+                    <Button className="bg-purple-600 hover:bg-purple-700 text-white">Check Eligibility</Button>
                   </div>
                 </div>
               </DialogContent>
@@ -150,7 +173,7 @@ export default function BillingPage() {
 
             <Dialog open={isAddChargeOpen} onOpenChange={setIsAddChargeOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled>
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Charge
                 </Button>
@@ -158,45 +181,46 @@ export default function BillingPage() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add New Charge</DialogTitle>
-                  <DialogDescription>This feature is not yet implemented.</DialogDescription>
+                  <DialogDescription>Create a new billing charge for a patient</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="patient">Patient</Label>
-                    <Select disabled>
+                    <Select>
                       <SelectTrigger>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       <SelectContent>
-                        {patients.map(p => (
-                          <SelectItem key={p.id} value={p.id!}>{p.name?.[0] ? `${p.name[0].given?.join(" ")} ${p.name[0].family}` : "N/A"}</SelectItem>
-                        ))}
+                        <SelectItem value="P001">Sarah Johnson</SelectItem>
+                        <SelectItem value="P002">Michael Chen</SelectItem>
+                        <SelectItem value="P003">Emma Davis</SelectItem>
+                        <SelectItem value="P004">James Wilson</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="code">Procedure Code</Label>
-                      <Input placeholder="e.g., 99213" disabled />
+                      <Input placeholder="e.g., 99213" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="amount">Amount</Label>
-                      <Input type="number" placeholder="0.00" disabled />
+                      <Input type="number" placeholder="0.00" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
-                    <Input placeholder="Service description" disabled />
+                    <Input placeholder="Service description" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="date">Service Date</Label>
-                    <Input type="date" defaultValue="2024-01-15" disabled />
+                    <Input type="date" defaultValue="2024-01-15" />
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
                     <Button variant="outline" onClick={() => setIsAddChargeOpen(false)}>
                       Cancel
                     </Button>
-                    <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled>Add Charge</Button>
+                    <Button className="bg-purple-600 hover:bg-purple-700 text-white">Add Charge</Button>
                   </div>
                 </div>
               </DialogContent>
@@ -212,7 +236,11 @@ export default function BillingPage() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${insurancePortion.toLocaleString()}</div>
+              <div className="text-2xl font-bold">$125,000</div>
+              <p className="text-xs text-muted-foreground flex items-center">
+                <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
+                +8% from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -222,7 +250,11 @@ export default function BillingPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${patientPortion.toLocaleString()}</div>
+              <div className="text-2xl font-bold">$45,000</div>
+              <p className="text-xs text-muted-foreground flex items-center">
+                <TrendingDown className="w-3 h-3 mr-1 text-red-500" />
+                -3% from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -232,7 +264,11 @@ export default function BillingPage() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalBilled.toLocaleString()}</div>
+              <div className="text-2xl font-bold">$200,000</div>
+              <p className="text-xs text-muted-foreground flex items-center">
+                <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
+                +12% from last month
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -274,49 +310,140 @@ export default function BillingPage() {
                 <CardTitle>Recent Transactions</CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? <p>Loading...</p> : error ? <p className="text-red-500">{error}</p> : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Patient</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Insurance</TableHead>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{transaction.patient}</div>
+                            <div className="text-sm text-muted-foreground">{transaction.patientId}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell className="font-mono">{transaction.code}</TableCell>
+                        <TableCell>{transaction.description}</TableCell>
+                        <TableCell className="font-medium">${transaction.amount.toFixed(2)}</TableCell>
+                        <TableCell>${transaction.insurance.toFixed(2)}</TableCell>
+                        <TableCell>${transaction.patient.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`${getStatusColor(transaction.status)} text-white border-0`}
+                          >
+                            {transaction.status}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.map((transaction) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{getPatientName(transaction.patient.reference!)}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{new Date(transaction.created).toLocaleDateString()}</TableCell>
-                          <TableCell>{transaction.item?.[0]?.productOrService.text}</TableCell>
-                          <TableCell className="font-medium">${transaction.total?.[0].amount.value.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={`${getStatusColor(transaction.status)} text-white border-0`}
-                            >
-                              {transaction.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            {/* Analytics charts are complex and would require significant data transformation. */}
-            {/* Leaving as is for now. */}
-            <p>Analytics charts will be connected in a future step.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Revenue Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Monthly Revenue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={monthlyRevenue}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" className="text-muted-foreground" />
+                      <YAxis className="text-muted-foreground" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
+                      />
+                      <Bar dataKey="revenue" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Balance Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Balance Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={balanceData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={120}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {balanceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex justify-center space-x-6 mt-4">
+                    {balanceData.map((item) => (
+                      <div key={item.name} className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2`} style={{ backgroundColor: item.color }} />
+                        <span className="text-sm text-muted-foreground">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">Total Revenue (6 months)</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold">${totalBalance.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">Outstanding Balance</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold">94.2%</div>
+                  <p className="text-xs text-muted-foreground">Collection Rate</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold">18</div>
+                  <p className="text-xs text-muted-foreground">Days in A/R</p>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

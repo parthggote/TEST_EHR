@@ -10,7 +10,13 @@ import {
   Appointment,
   OperationOutcome,
   EpicTokenResponse,
-  EpicAuthState
+  EpicAuthState,
+  Condition,
+  AllergyIntolerance,
+  Observation,
+  DocumentReference,
+  MedicationRequest,
+  Immunization
 } from './types/fhir';
 import { getEpicConfig, getEpicScopes } from './config';
 import CryptoJS from 'crypto-js';
@@ -101,7 +107,7 @@ export class EpicFHIRClient {
       console.log('Generated auth URL:', {
         clientId: this.config.clientId ? `${this.config.clientId.substring(0, 8)}...` : 'missing',
         redirectUri: this.config.redirectUri,
-        scopes: scopes.join(' '),
+        scopes: resolvedScopes.join(' '),
         state: state.substring(0, 8) + '...',
         codeChallenge: codeChallenge.substring(0, 8) + '...',
         fullUrl: authUrl
@@ -570,7 +576,6 @@ export class EpicFHIRClient {
     return this.makeRequest<FHIRBundle>(`AllergyIntolerance?patient=${patientId}`, accessToken);
   }
 
- feat/clinician-portal
   async createAllergy(accessToken: string, allergy: Partial<AllergyIntolerance>): Promise<AllergyIntolerance> {
     return this.makeRequest<AllergyIntolerance>('AllergyIntolerance', accessToken, {
       method: 'POST',
@@ -649,55 +654,6 @@ export class EpicFHIRClient {
 
     const errorText = await response.text();
     throw new Error(`Failed to check bulk export status: ${response.status} ${errorText}`);
-
-  async getPatientImmunizations(accessToken: string, patientId: string): Promise<FHIRBundle> {
-    if (this.config.useMockData) {
-      // Mock data logic would go here
-      return { resourceType: 'Bundle', entry: [] };
-    }
-    return this.makeRequest<FHIRBundle>(`Immunization?patient=${patientId}`, accessToken);
-  }
-
-  async getPatientDiagnosticReports(accessToken: string, patientId: string): Promise<FHIRBundle> {
-    if (this.config.useMockData) {
-      // Mock data logic would go here
-      return { resourceType: 'Bundle', entry: [] };
-    }
-    return this.makeRequest<FHIRBundle>(`DiagnosticReport?patient=${patientId}`, accessToken);
-  }
-
-  async getPatientDocumentReferences(accessToken: string, patientId: string): Promise<FHIRBundle> {
-    if (this.config.useMockData) {
-      // Mock data logic would go here
-      return { resourceType: 'Bundle', entry: [] };
-    }
-    return this.makeRequest<FHIRBundle>(`DocumentReference?patient=${patientId}`, accessToken);
-  }
-
-  async getPatientProcedures(accessToken: string, patientId: string): Promise<FHIRBundle> {
-    if (this.config.useMockData) {
-      // Mock data logic would go here
-      return { resourceType: 'Bundle', entry: [] };
-    }
-    return this.makeRequest<FHIRBundle>(`Procedure?patient=${patientId}`, accessToken);
-  }
-
-  // Billing Operations
-  async getPatientCoverage(accessToken: string, patientId: string): Promise<FHIRBundle> {
-    if (this.config.useMockData) {
-      // Mock data logic would go here
-      return { resourceType: 'Bundle', entry: [] };
-    }
-    return this.makeRequest<FHIRBundle>(`Coverage?patient=${patientId}`, accessToken);
-  }
-
-  async getPatientExplanationOfBenefit(accessToken: string, patientId: string): Promise<FHIRBundle> {
-    if (this.config.useMockData) {
-      // Mock data logic would go here
-      return { resourceType: 'Bundle', entry: [] };
-    }
-    return this.makeRequest<FHIRBundle>(`ExplanationOfBenefit?patient=${patientId}`, accessToken);
- main
   }
 
   // Utility Methods
