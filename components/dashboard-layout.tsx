@@ -40,9 +40,10 @@ const patientNavigation = [
 ]
 
 const clinicianNavigation = [
-  { name: "Clinician Portal", href: "/dashboard/clinician", icon: Home },
-  // Future clinician-specific links will go here
-  // e.g., { name: "Patient Management", href: "/dashboard/clinician/patients", icon: Users },
+  { name: "Clinician Home", href: "/dashboard/clinician", icon: Home },
+  { name: "Patient Management", href: "/dashboard/clinician/patients", icon: Users },
+  { name: "Appointments", href: "/dashboard/clinician/appointments", icon: Calendar },
+  { name: "Bulk Data Export", href: "/dashboard/clinician/bulk-data", icon: Download },
 ]
 
 interface DashboardLayoutProps {
