@@ -431,6 +431,54 @@ export class EpicFHIRClient {
     return this.makeRequest<FHIRBundle>(`Observation?${searchParams.toString()}`, accessToken);
   }
 
+  async createObservation(accessToken: string, observation: Partial<Observation>): Promise<Observation> {
+    return this.makeRequest<Observation>('Observation', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(observation)
+    });
+  }
+
+  async getObservation(accessToken: string, observationId: string): Promise<Observation> {
+    return this.makeRequest<Observation>(`Observation/${observationId}`, accessToken);
+  }
+
+  async updateObservation(accessToken: string, observation: Observation): Promise<Observation> {
+    return this.makeRequest<Observation>(`Observation/${observation.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(observation)
+    });
+  }
+
+  async deleteObservation(accessToken: string, observationId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`Observation/${observationId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
+  async createDocumentReference(accessToken: string, docRef: Partial<DocumentReference>): Promise<DocumentReference> {
+    return this.makeRequest<DocumentReference>('DocumentReference', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(docRef)
+    });
+  }
+
+  async getDocumentReference(accessToken: string, docRefId: string): Promise<DocumentReference> {
+    return this.makeRequest<DocumentReference>(`DocumentReference/${docRefId}`, accessToken);
+  }
+
+  async updateDocumentReference(accessToken: string, docRef: DocumentReference): Promise<DocumentReference> {
+    return this.makeRequest<DocumentReference>(`DocumentReference/${docRef.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(docRef)
+    });
+  }
+
+  async deleteDocumentReference(accessToken: string, docRefId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`DocumentReference/${docRefId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
   async getPatientConditions(accessToken: string, patientId: string): Promise<FHIRBundle> {
     if (this.config.useMockData) {
       try {
@@ -457,6 +505,58 @@ export class EpicFHIRClient {
     return this.makeRequest<FHIRBundle>(`MedicationRequest?patient=${patientId}`, accessToken);
   }
 
+  async createMedicationRequest(accessToken: string, medReq: Partial<MedicationRequest>): Promise<MedicationRequest> {
+    return this.makeRequest<MedicationRequest>('MedicationRequest', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(medReq)
+    });
+  }
+
+  async getMedicationRequest(accessToken: string, medReqId: string): Promise<MedicationRequest> {
+    return this.makeRequest<MedicationRequest>(`MedicationRequest/${medReqId}`, accessToken);
+  }
+
+  async updateMedicationRequest(accessToken: string, medReq: MedicationRequest): Promise<MedicationRequest> {
+    return this.makeRequest<MedicationRequest>(`MedicationRequest/${medReq.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(medReq)
+    });
+  }
+
+  async deleteMedicationRequest(accessToken: string, medReqId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`MedicationRequest/${medReqId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
+  async getPatientImmunizations(accessToken: string, patientId: string): Promise<FHIRBundle> {
+    return this.makeRequest<FHIRBundle>(`Immunization?patient=${patientId}`, accessToken);
+  }
+
+  async createImmunization(accessToken: string, immunization: Partial<Immunization>): Promise<Immunization> {
+    return this.makeRequest<Immunization>('Immunization', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(immunization)
+    });
+  }
+
+  async getImmunization(accessToken: string, immunizationId: string): Promise<Immunization> {
+    return this.makeRequest<Immunization>(`Immunization/${immunizationId}`, accessToken);
+  }
+
+  async updateImmunization(accessToken: string, immunization: Immunization): Promise<Immunization> {
+    return this.makeRequest<Immunization>(`Immunization/${immunization.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(immunization)
+    });
+  }
+
+  async deleteImmunization(accessToken: string, immunizationId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`Immunization/${immunizationId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
   async getPatientAllergies(accessToken: string, patientId: string): Promise<FHIRBundle> {
     if (this.config.useMockData) {
       try {
@@ -469,6 +569,86 @@ export class EpicFHIRClient {
 
     return this.makeRequest<FHIRBundle>(`AllergyIntolerance?patient=${patientId}`, accessToken);
   }
+
+ feat/clinician-portal
+  async createAllergy(accessToken: string, allergy: Partial<AllergyIntolerance>): Promise<AllergyIntolerance> {
+    return this.makeRequest<AllergyIntolerance>('AllergyIntolerance', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(allergy)
+    });
+  }
+
+  async getAllergy(accessToken: string, allergyId: string): Promise<AllergyIntolerance> {
+    return this.makeRequest<AllergyIntolerance>(`AllergyIntolerance/${allergyId}`, accessToken);
+  }
+
+  async updateAllergy(accessToken: string, allergy: AllergyIntolerance): Promise<AllergyIntolerance> {
+    return this.makeRequest<AllergyIntolerance>(`AllergyIntolerance/${allergy.id}`, accessToken, {
+      method: 'PUT',
+      body: JSON.stringify(allergy)
+    });
+  }
+
+  async deleteAllergy(accessToken: string, allergyId: string): Promise<OperationOutcome> {
+    return this.makeRequest<OperationOutcome>(`AllergyIntolerance/${allergyId}`, accessToken, {
+      method: 'DELETE'
+    });
+  }
+
+  // Bulk Data Operations
+  async kickOffBulkExport(accessToken: string): Promise<string> {
+    const exportUrl = `${this.config.baseUrl}$export`;
+
+    const response = await fetch(exportUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/fhir+json',
+        'Prefer': 'respond-async',
+      },
+    });
+
+    if (response.status !== 202) {
+      const errorText = await response.text();
+      throw new Error(`Failed to kick off bulk export: ${response.status} ${errorText}`);
+    }
+
+    const contentLocation = response.headers.get('Content-Location');
+    if (!contentLocation) {
+      throw new Error('Bulk export kick-off did not return a Content-Location header.');
+    }
+
+    return contentLocation;
+  }
+
+  async checkBulkExportStatus(accessToken: string, statusUrl: string): Promise<any> {
+    const response = await fetch(statusUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (response.status === 202) {
+      // Job is still in progress
+      return {
+        status: 'in-progress',
+        progress: response.headers.get('X-Progress') || 'Not specified',
+      };
+    }
+
+    if (response.status === 200) {
+      // Job is complete
+      const manifest = await response.json();
+      return {
+        status: 'complete',
+        manifest: manifest,
+      };
+    }
+
+    const errorText = await response.text();
+    throw new Error(`Failed to check bulk export status: ${response.status} ${errorText}`);
 
   async getPatientImmunizations(accessToken: string, patientId: string): Promise<FHIRBundle> {
     if (this.config.useMockData) {
@@ -517,6 +697,7 @@ export class EpicFHIRClient {
       return { resourceType: 'Bundle', entry: [] };
     }
     return this.makeRequest<FHIRBundle>(`ExplanationOfBenefit?patient=${patientId}`, accessToken);
+ main
   }
 
   // Utility Methods

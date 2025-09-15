@@ -152,5 +152,52 @@ describe('EpicFHIRClient', () => {
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/Condition/cond1'), expect.objectContaining({ method: 'DELETE' }));
       });
     });
+
+    // Test Bulk Data Export
+    describe('Bulk Data Export', () => {
+      it('should kick off a bulk export', async () => {
+        const statusUrl = 'https://example.com/status/123';
+        (fetch as jest.Mock).mockResolvedValue({
+          ok: true,
+          status: 202,
+          headers: new Map([['Content-Location', statusUrl]]),
+        });
+        const result = await client.kickOffBulkExport(mockAccessToken);
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/$export'), expect.any(Object));
+        expect(result).toBe(statusUrl);
+      });
+
+      it('should check export status (in-progress)', async () => {
+        const statusUrl = 'https://example.com/status/123';
+        (fetch as jest.Mock).mockResolvedValue({
+          ok: true,
+          status: 202,
+          headers: new Map([['X-Progress', '50%']]),
+        });
+        const result = await client.checkBulkExportStatus(mockAccessToken, statusUrl);
+        expect(fetch).toHaveBeenCalledWith(statusUrl, expect.any(Object));
+        expect(result.status).toBe('in-progress');
+        expect(result.progress).toBe('50%');
+      });
+    });
+
+    // Test a few other resources to show the pattern
+    describe('AllergyIntolerance CRUD', () => {
+      it('should create an allergy', async () => {
+        (fetch as jest.Mock).mockResolvedValue({ ok: true, json: () => Promise.resolve({ id: 'allergy1' }) });
+        const result = await client.createAllergy(mockAccessToken, { resourceType: 'AllergyIntolerance' });
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/AllergyIntolerance'), expect.objectContaining({ method: 'POST' }));
+        expect(result.id).toBe('allergy1');
+      });
+    });
+
+    describe('Immunization CRUD', () => {
+      it('should create an immunization', async () => {
+        (fetch as jest.Mock).mockResolvedValue({ ok: true, json: () => Promise.resolve({ id: 'imm1' }) });
+        const result = await client.createImmunization(mockAccessToken, { resourceType: 'Immunization' });
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/Immunization'), expect.objectContaining({ method: 'POST' }));
+        expect(result.id).toBe('imm1');
+      });
+    });
   });
 });
