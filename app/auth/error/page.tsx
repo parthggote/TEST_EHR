@@ -114,19 +114,19 @@ function ErrorContent() {
           <CardContent className="space-y-4">
             <div className="flex flex-col space-y-2">
               {errorInfo.canRetry && (
-                <Button asChild className="w-full">
-                  <Link href="/api/auth/login">
+                <Link href="/api/auth/login" passHref className="w-full">
+                  <Button className="w-full">
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Try Again
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
               )}
-              <Button variant="outline" asChild className="w-full">
-                <Link href="/">
+              <Link href="/" passHref className="w-full">
+                <Button variant="outline" className="w-full">
                   <Home className="mr-2 h-4 w-4" />
                   Go Home
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
             
             <div className="mt-6 text-center">

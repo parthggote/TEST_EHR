@@ -17,7 +17,7 @@ export interface EpicConfig {
 export function getEpicConfig(): EpicConfig {
   const config: EpicConfig = {
     clientId: process.env.CLIENT_ID || '',
-    redirectUri: process.env.REDIRECT_URI || 'http://localhost:3000/auth/callback',
+    redirectUri: process.env.REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
     baseUrl: process.env.FHIR_BASE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
     authorizeUrl: process.env.EPIC_AUTHORIZE_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
     tokenUrl: process.env.EPIC_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
@@ -57,8 +57,8 @@ export function validateEpicConfig(): { valid: boolean; errors: string[] } {
     // Validate redirect URI format
     try {
       const url = new URL(config.redirectUri);
-      if (url.pathname !== '/auth/callback') {
-        errors.push('REDIRECT_URI must end with /auth/callback');
+      if (url.pathname !== '/api/auth/callback') {
+        errors.push('REDIRECT_URI must end with /api/auth/callback');
       }
       if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         errors.push('REDIRECT_URI must use http or https protocol');
