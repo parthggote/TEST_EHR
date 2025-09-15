@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, FormEvent } from "react"
-import Link from 'next/link';
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,30 +27,7 @@ export default function ClinicianPatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  const handleDelete = async (patientId: string, patientName: string) => {
-    if (window.confirm(`Are you sure you want to delete patient ${patientName}? This action cannot be undone.`)) {
-      try {
-        const response = await fetch(`/api/clinician/patients/${patientId}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.details || "Failed to delete patient.");
-        }
-
-        toast({ title: "Success!", description: "Patient has been deleted." });
-        // Refetch the list or remove from state
-        setPatients(prev => prev.filter(p => p.id !== patientId));
-
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-        toast({ title: "Error", description: errorMessage, variant: "destructive" });
-      }
-    }
-  };
+  const router = useRouter();
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -88,12 +65,10 @@ export default function ClinicianPatientsPage() {
             <h1 className="text-3xl font-bold text-foreground">Patient Management</h1>
             <p className="text-muted-foreground">Search, view, and manage patient records.</p>
           </div>
-          <Link href="/dashboard/clinician/patients/new">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Patient
-            </Button>
-          </Link>
+          <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => router.push('/dashboard/clinician/patients/new')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Patient
+          </Button>
         </div>
 
         {/* Search Form */}
@@ -136,38 +111,26 @@ export default function ClinicianPatientsPage() {
                   <TableHead>Date of Birth</TableHead>
                   <TableHead>Gender</TableHead>
                   <TableHead>Patient ID</TableHead>
-                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       <Loader2 className="w-6 h-6 mx-auto my-8 animate-spin" />
                     </TableCell>
                   </TableRow>
                 ) : (
                   patients.map((patient) => (
-                    <TableRow key={patient.id}>
+                    <TableRow
+                      key={patient.id}
+                      onClick={() => router.push(`/dashboard/clinician/patients/${patient.id}`)}
+                      className="hover:bg-muted/50 cursor-pointer"
+                    >
                       <TableCell className="font-medium">{getPatientName(patient)}</TableCell>
                       <TableCell>{patient.birthDate}</TableCell>
                       <TableCell>{patient.gender}</TableCell>
                       <TableCell className="font-mono">{patient.id}</TableCell>
-                      <TableCell className="space-x-2">
-                        <Link href={`/dashboard/clinician/patients/${patient.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Link href={`/dashboard/clinician/patients/${patient.id}?edit=true`}>
-                          <Button variant="ghost" size="sm">
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(patient.id!, getPatientName(patient))}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   ))
                 )}
