@@ -1,277 +1,147 @@
-# Epic FHIR Integration Dashboard
+# EHR_Dashboard: An Epic FHIR Integration Platform
 
-A secure, HIPAA-compliant Next.js dashboard for integrating with Epic's FHIR API using SMART on FHIR OAuth2 standards.
+EHR_Dashboard is a secure, HIPAA-compliant web application built with Next.js that demonstrates a robust integration with Epic's FHIR API. It provides separate, feature-rich dashboards for both patients and clinicians, leveraging the SMART on FHIR OAuth2 standard for secure authentication and data access.
 
-## 🏥 Features
+## ✨ Key Features
 
-### Core Modules
-- **Patient Management**: Search, view demographics, and manage patient data
-- **Appointments**: Schedule, view, and manage appointments
-- **Clinical Data**: Access vitals, lab results, observations, and conditions
-- **Medications**: View current and past medications with dosage information
-- **Allergies**: Track known allergies and adverse reactions
-- **Reports**: Generate clinical reports and analytics
+-   **Dual Dashboards**: Separate, tailored experiences for patients and clinicians.
+-   **SMART on FHIR**: Secure OAuth2 authentication for both user types.
+-   **Bulk Data Import**: A sophisticated workflow for clinicians to import data for an entire group of patients from the Epic sandbox.
+-   **MongoDB Caching**: Caches bulk data to improve performance and reduce redundant API calls.
+-   **Dynamic UI**: Built with shadcn/ui, featuring a dark/light mode theme toggle.
+-   **Secure by Design**: Implements best practices for handling Protected Health Information (PHI), including token encryption and secure cookie storage.
 
-### Security & Compliance
-- ✅ SMART on FHIR OAuth2 Authorization Code Flow with PKCE
-- ✅ AES-256 encryption for PHI data
-- ✅ HTTP-only secure cookies for token storage
-- ✅ Comprehensive audit logging
-- ✅ HIPAA-compliant architecture
-- ✅ Token refresh handling
-- ✅ Rate limiting and retry logic
+---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm/pnpm
-- Epic FHIR application credentials (for real API) OR use mock mode for development
+
+-   Node.js 18+ and npm/pnpm
+-   MongoDB instance (local or cloud-based)
+-   Epic FHIR application credentials (for real API) OR use mock mode for development
 
 ### 1. Clone and Install
+
 ```bash
 git clone <repository-url>
-cd epic-fhir-dashboard
+cd ehr-dashboard
 npm install
 ```
 
-### 2. Easy Setup (Recommended)
-Run the interactive setup script:
+### 2. Environment Setup
+
+Run the interactive setup script to configure your environment:
 
 ```bash
 npm run setup:epic
 ```
 
-This will guide you through:
-- Choosing between Mock Data or Real Epic API
-- Generating secure keys
-- Creating the proper .env configuration
+This script will guide you through:
+-   Choosing between Mock Data or the Real Epic API.
+-   Generating secure keys for session and data encryption.
+-   Creating your `.env.local` file with the necessary credentials, including your MongoDB connection string.
 
-### 3. Manual Setup (Alternative)
+### 3. Run the Development Server
 
-#### Option A: Mock Data Mode (No Epic Registration Required)
-```env
-CLIENT_ID=
-USE_MOCK_DATA=true
-NEXTAUTH_SECRET=your_secure_random_string
-ENCRYPTION_KEY=your_32_character_key
-```
-
-#### Option B: Real Epic API Mode
-1. Register at [Epic Developer Portal](https://fhir.epic.com/Developer)
-2. Get your Client ID
-3. Configure:
-```env
-CLIENT_ID=your_epic_client_id
-USE_MOCK_DATA=false
-REDIRECT_URI=http://localhost:3000/auth/callback
-NEXTAUTH_SECRET=your_secure_random_string
-ENCRYPTION_KEY=your_32_character_key
-```
-
-### 4. Run Development Server
 ```bash
 npm run dev
 ```
 
-### 5. Test the Integration
-- **Status Check**: Visit `http://localhost:3000/status`
-- **Mock Demo**: Visit `http://localhost:3000/demo` (mock mode)
-- **Real Integration**: Click "Connect to Epic MyChart" (real API mode)
+The application will be available at `http://localhost:3000`.
 
-## 📋 Epic App Registration (For Real API)
+---
 
-### Required Settings:
-- **App Type**: Public Client (SMART on FHIR)
-- **Redirect URI**: `http://localhost:3000/auth/callback`
-- **Scopes**: `patient/*.read`, `user/*.read`, `launch`, `openid`, `profile`
-- **FHIR Version**: R4
+## 🏥 Features in Detail
 
-### Test Credentials:
-Epic provides test patient data:
-- **Test Patient**: Jason Fhir (ID: eq081-VQEgP8drUUqCWzHfw3)
-- **Sandbox URL**: https://fhir.epic.com/
+### Patient-Facing Dashboard (`/dashboard`)
+
+A patient-centric portal where users can:
+-   Log in using their Epic MyChart credentials.
+-   View their personal health information, including appointments, conditions, medications, and allergies.
+-   The UI is designed to be simple, secure, and easy to navigate.
+
+### Clinician-Facing Dashboard (`/dashboard/clinician`)
+
+A powerful tool for healthcare providers. The standout feature is the **Bulk Data Import** workflow.
+
+**Bulk Import Workflow:**
+1.  **Initiate Export**: The clinician clicks "Start Bulk Import" to trigger a request to the Epic FHIR API for a predefined group of patients.
+2.  **Monitor Progress**: The UI provides real-time status updates on the export job (e.g., "In-progress", "Complete").
+3.  **Load Data on Demand**: Once the export is complete, a manifest of available data files is shown. The clinician can then click "Load" for any resource type (e.g., Patient, Appointment, Condition).
+4.  **Cache & Display**:
+    -   The first time a data file is loaded, it's fetched from the Epic server, parsed, and **cached in MongoDB**.
+    -   The data is then displayed in a clean, tabular format on the dashboard.
+    -   On subsequent requests, the data is served instantly from the MongoDB cache, significantly improving performance.
+
+---
+
+## 🛠️ Technology Stack
+
+-   **Framework**: Next.js 14 (App Router)
+-   **Language**: TypeScript
+-   **UI**: React, shadcn/ui, Tailwind CSS
+-   **Authentication**: SMART on FHIR (OAuth2)
+-   **Database**: MongoDB (for caching)
+-   **Styling**: CSS-in-JS with PostCSS
+-   **Icons**: lucide-react
+
+---
 
 ## 📁 Project Structure
 
 ```
 ├── app/
 │   ├── api/
-│   │   ├── auth/           # Authentication routes
-│   │   └── fhir/           # FHIR API routes
-│   ├── auth/               # Auth pages
-│   ├── dashboard/          # Main dashboard
-│   └── page.tsx           # Landing page
+│   │   ├── auth/           # Authentication routes (patient & clinician)
+│   │   ├── clinician/      # Clinician-specific API routes (including bulk data)
+│   │   └── fhir/           # Patient-specific FHIR API routes
+│   ├── dashboard/
+│   │   ├── clinician/      # Clinician dashboard page & layout
+│   │   └── page.tsx        # Patient dashboard page
+│   └── layout.tsx          # Root layout
 ├── components/
-│   ├── ui/                # shadcn/ui components
-│   └── dashboard-layout.tsx
+│   ├── resource-tables/    # Reusable components for displaying FHIR data
+│   ├── ui/                 # shadcn/ui components
+│   └── dashboard-layout.tsx # Shared layout for the clinician portal
 ├── lib/
-│   ├── types/
-│   │   └── fhir.ts        # FHIR type definitions
-│   ├── epic-client.ts     # Epic FHIR client
-│   └── utils.ts
-├── hooks/                 # Custom React hooks
-└── public/               # Static assets
+│   ├── epic-client.ts      # Epic FHIR client for API interactions
+│   └── mongodb.ts          # MongoDB connection utility
+└── hooks/                  # Custom React hooks
 ```
+
+---
 
 ## 🔐 Authentication Flow
 
-1. **Login**: User clicks "Login with Epic" → redirects to Epic OAuth2
-2. **Authorization**: User grants permissions in Epic MyChart
-3. **Callback**: Epic redirects back with authorization code
-4. **Token Exchange**: Server exchanges code for access token using PKCE
-5. **Secure Storage**: Tokens encrypted and stored in HTTP-only cookies
-6. **Dashboard Access**: User can now access FHIR data
+1.  **Login**: User selects either the patient or clinician login path.
+2.  **Redirect to Epic**: The user is redirected to the Epic OAuth2 authorization server.
+3.  **Grant Permissions**: The user logs in with their Epic credentials and grants the application access.
+4.  **Callback**: Epic redirects back to the application with an authorization code.
+5.  **Token Exchange**: The application's backend securely exchanges the code for an access token.
+6.  **Secure Session**: The access token is encrypted and stored in a secure, HTTP-only cookie, establishing a session.
+7.  **Dashboard Access**: The user is redirected to their respective dashboard and can now make authenticated requests to the backend.
 
-## 🛡️ Security Features
-
-### Data Protection
-- All PHI data encrypted at rest and in transit
-- Tokens stored in HTTP-only, secure cookies
-- CSRF protection with state parameter validation
-- Input validation and sanitization
-
-### Audit Logging
-- All FHIR API calls logged with timestamps
-- Authentication events tracked
-- Error events recorded for monitoring
-- No PHI data in logs (HIPAA compliant)
-
-### Error Handling
-- Graceful handling of Epic API errors
-- Retry logic with exponential backoff
-- User-friendly error messages
-- Automatic token refresh
-
-## 📊 API Endpoints
-
-### Authentication
-- `GET /api/auth/login` - Initiate Epic OAuth2 flow
-- `GET /api/auth/callback` - Handle OAuth2 callback
-- `POST /api/auth/logout` - Clear session and tokens
-- `GET /api/auth/session` - Get current session info
-
-### FHIR Data
-- `GET /api/fhir/patients` - Search patients
-- `GET /api/fhir/patients/[id]/appointments` - Patient appointments
-- `GET /api/fhir/patients/[id]/clinical` - Clinical data
-- `POST /api/fhir/patients/[id]/appointments` - Create appointment
+---
 
 ## 🧪 Testing
 
-### Unit Tests
-```bash
-pnpm test
-```
+The application is configured for testing with the Epic on FHIR sandbox.
 
-### E2E Tests
-```bash
-pnpm test:e2e
-```
+-   **Clinician Users**: The documentation provides test clinician accounts (`FHIR`, `FHIRTWO`).
+-   **Patient Users**: Test patients with MyChart credentials (e.g., `fhircamila`) are available.
+-   **Bulk Data Group**: The clinician dashboard is hardcoded to use the test group ID for bulk exports: `e3iabhmS8rsueyz7vaimuiaSmfGvi.QwjVXJANlPOgR83`.
 
-### Epic Sandbox Testing
-1. Use Epic's sandbox environment for testing
-2. Test patient: Fhir, Jason (ID: eq081-VQEgP8drUUqCWzHfw3)
-3. Available test scenarios in Epic's documentation
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
-3. Update `REDIRECT_URI` to your production domain
-4. Deploy with automatic SSL
-
-### Manual Deployment
-1. Build the application: `pnpm build`
-2. Start production server: `pnpm start`
-3. Ensure SSL certificate is configured
-4. Update Epic app registration with production URLs
-
-### Environment-Specific Configuration
-- **Development**: Use Epic sandbox endpoints
-- **Staging**: Use Epic sandbox with production-like setup
-- **Production**: Use Epic production endpoints with proper SSL
-
-## 📋 Epic Integration Checklist
-
-- [ ] Epic App Orchard registration completed
-- [ ] Client ID and redirect URI configured
-- [ ] SSL certificate installed (production)
-- [ ] FHIR scopes properly requested
-- [ ] Error handling implemented
-- [ ] Audit logging configured
-- [ ] Token refresh handling
-- [ ] HIPAA compliance review
-
-## 🔧 Configuration Options
-
-### Scopes
-Configure required FHIR scopes in the login flow:
-- `patient/*.read` - Read patient data
-- `user/*.read` - Read user data
-- `launch` - Launch context
-- `openid profile` - User identity
-
-### Rate Limiting
-Epic enforces rate limits:
-- 1000 requests per hour per client
-- Automatic retry with exponential backoff implemented
-
-### Token Management
-- Access tokens expire in 1 hour
-- Refresh tokens valid for 30 days
-- Automatic refresh before expiration
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**"Invalid client" error**
-- Verify CLIENT_ID matches Epic registration
-- Check redirect URI exactly matches registration
-
-**"Scope not granted" error**
-- Ensure requested scopes are approved in Epic
-- Check user has necessary permissions
-
-**Token expired errors**
-- Implement proper token refresh logic
-- Check system clock synchronization
-
-**CORS errors**
-- Verify domain is registered with Epic
-- Check SSL certificate is valid
-
-### Debug Mode
-Enable debug logging:
-```env
-NODE_ENV=development
-DEBUG=epic:*
-```
-
-## 📚 Resources
-
-- [Epic FHIR Documentation](https://fhir.epic.com/)
-- [SMART on FHIR Specification](http://hl7.org/fhir/smart-app-launch/)
-- [Epic App Orchard](https://apporchard.epic.com/)
-- [FHIR R4 Specification](http://hl7.org/fhir/R4/)
+---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## ⚠️ Disclaimer
-
-This is a demonstration application. For production use:
-- Conduct thorough security review
-- Implement additional monitoring
-- Follow your organization's HIPAA compliance procedures
-- Test extensively with Epic's sandbox environment
+This project is licensed under the MIT License. See the `LICENSE` file for details.
