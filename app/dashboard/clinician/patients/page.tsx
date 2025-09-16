@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, FormEvent, useEffect } from "react"
+import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -26,32 +26,9 @@ function getPatientName(patient: Patient): string {
 export default function ClinicianPatientsPage() {
   const [searchParams, setSearchParams] = useState({ identifier: "", family: "", given: "" });
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
-  const loadAllPatients = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/clinician/patients?_fetchAll=true');
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to fetch all patients');
-      }
-      const data = await response.json();
-      setPatients(data.entry?.map((entry: any) => entry.resource) || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      setPatients([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAllPatients();
-  }, []);
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -84,12 +61,6 @@ export default function ClinicianPatientsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleClearSearch = () => {
-    if (isLoading) return;
-    setSearchParams({ identifier: "", family: "", given: "" });
-    loadAllPatients();
   };
 
   return (
@@ -137,9 +108,6 @@ export default function ClinicianPatientsPage() {
                 {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
                 Search
               </Button>
-              <Button type="button" variant="outline" onClick={handleClearSearch} disabled={isLoading}>
-                Clear
-              </Button>
             </form>
           </CardContent>
         </Card>
@@ -147,7 +115,7 @@ export default function ClinicianPatientsPage() {
         {/* Patients Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Patient List ({patients.length})</CardTitle>
+            <CardTitle>Search Results ({patients.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {error && (

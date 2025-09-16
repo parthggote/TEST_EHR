@@ -31,8 +31,6 @@ function getAccessToken(): string | null {
   }
 }
 
-import { connectToDatabase } from '@/lib/mongodb';
-
 export async function GET(request: NextRequest) {
   const accessToken = getAccessToken();
 
@@ -42,27 +40,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const fetchAll = searchParams.get('_fetchAll') === 'true';
 
-    if (fetchAll) {
-      const { db } = await connectToDatabase();
-      const cacheCollection = db.collection('bulk_data_files');
-
-      const patientDataCache = await cacheCollection.findOne(
-        { fileType: 'Patient' },
-        { sort: { createdAt: -1 } }
-      );
-
-      if (patientDataCache && Array.isArray(patientDataCache.data)) {
-        const patients = patientDataCache.data;
-        return NextResponse.json({ entry: patients.map(p => ({ resource: p })) });
-      } else {
-        // No patient data in cache, return empty list
-        return NextResponse.json({ entry: [] });
-      }
-    }
-
-    // Existing search logic for single-page results from live API
     const searchCriteria = {
       family: searchParams.get('family') || undefined,
       given: searchParams.get('given') || undefined,
@@ -77,9 +55,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(searchResults);
 
   } catch (error) {
-    console.error('Failed to search or fetch patients:', error);
+    console.error('Failed to search patients:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to process patient request', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to search patients', details: errorMessage }, { status: 500 });
   }
 }
 
