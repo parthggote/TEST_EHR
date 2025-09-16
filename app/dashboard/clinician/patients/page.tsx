@@ -53,8 +53,8 @@ export default function PatientManagementPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button asChild>
-              <Link href="/dashboard/clinician/patients/new">New Patient</Link>
+            <Button onClick={() => router.push('/dashboard/clinician/patients/new')}>
+              New Patient
             </Button>
             <Button onClick={() => router.push('/dashboard/clinician')} variant="outline">
               Back to Dashboard
