@@ -1,89 +1,47 @@
-/**
- * API Route for searching patients from the clinician portal.
- *
- * Handles GET requests to search for patients using various criteria.
- * This route is protected by the middleware, ensuring only authenticated
- * clinicians can access it.
- */
+import { NextResponse, NextRequest } from 'next/server'
+import { connectToDatabase } from '@/lib/mongodb'
 
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { EpicFHIRClient } from '@/lib/epic-client';
-import CryptoJS from 'crypto-js';
-
-// Helper function to get and decrypt the access token
-function getAccessToken(): string | null {
-  const cookieStore = cookies();
-  const encryptedToken = cookieStore.get('epic_clinician_access_token')?.value;
-
-  if (!encryptedToken) {
-    return null;
-  }
-
+// GET all patients from cache
+export async function GET() {
   try {
-    const encryptionKey = process.env.ENCRYPTION_KEY!;
-    const decryptedBytes = CryptoJS.AES.decrypt(encryptedToken, encryptionKey);
-    const accessToken = decryptedBytes.toString(CryptoJS.enc.Utf8);
-    return accessToken;
+    const { db } = await connectToDatabase()
+    const patients = await db.collection('patients').find({}).toArray()
+    return NextResponse.json(patients)
   } catch (error) {
-    console.error("Failed to decrypt access token:", error);
-    return null;
+    console.error('Failed to fetch patients from cache:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch patients from cache' },
+      { status: 500 }
+    )
   }
 }
 
-export async function GET(request: NextRequest) {
-  const accessToken = getAccessToken();
-
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Not authenticated or session expired' }, { status: 401 });
-  }
-
-  try {
-    const { searchParams } = new URL(request.url);
-
-    const searchCriteria = {
-      family: searchParams.get('family') || undefined,
-      given: searchParams.get('given') || undefined,
-      birthdate: searchParams.get('birthdate') || undefined,
-      identifier: searchParams.get('identifier') || undefined,
-      _count: searchParams.get('_count') || '10', // Default to 10 results
-    };
-
-    const epicClient = new EpicFHIRClient('clinician');
-    const searchResults = await epicClient.searchPatients(accessToken, searchCriteria);
-
-    return NextResponse.json(searchResults);
-
-  } catch (error) {
-    console.error('Failed to search patients:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to search patients', details: errorMessage }, { status: 500 });
-  }
-}
-
+// POST a new patient to the cache
 export async function POST(request: NextRequest) {
-  const accessToken = getAccessToken();
-
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Not authenticated or session expired' }, { status: 401 });
-  }
-
   try {
-    const patientData = await request.json();
+    const patientData = await request.json()
 
     // Basic validation
-    if (!patientData || typeof patientData !== 'object' || !patientData.resourceType) {
+    if (!patientData || !patientData.name || !patientData.birthDate || !patientData.gender) {
       return NextResponse.json({ error: 'Invalid patient data provided' }, { status: 400 });
     }
 
-    const epicClient = new EpicFHIRClient('clinician');
-    const newPatient = await epicClient.createPatient(accessToken, patientData);
+    const { db } = await connectToDatabase()
 
-    return NextResponse.json(newPatient, { status: 201 });
+    // In a real app, you'd add more validation and cleaning here
+    const result = await db.collection('patients').insertOne({
+      ...patientData,
+      resourceType: 'Patient', // Ensure resourceType is set
+      id: `local-${new Date().getTime()}`, // Create a fake local ID
+      createdAt: new Date(),
+    })
 
+    return NextResponse.json(result, { status: 201 })
   } catch (error) {
-    console.error('Failed to create patient:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ error: 'Failed to create patient', details: errorMessage }, { status: 500 });
+    console.error('Failed to create patient in cache:', error)
+    return NextResponse.json(
+      { error: 'Failed to create patient in cache' },
+      { status: 500 }
+    )
   }
 }

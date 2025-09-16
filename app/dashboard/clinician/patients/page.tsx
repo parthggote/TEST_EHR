@@ -1,169 +1,73 @@
-"use client"
+'use client'
 
-import { useState, FormEvent } from "react"
-import { useRouter } from "next/navigation";
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Search, Plus, Eye, Pencil, Trash2, Loader2 } from "lucide-react"
-import { Patient } from "@/lib/types/fhir";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { DashboardLayout } from '@/components/dashboard-layout'
+import { PatientTable } from '@/components/resource-tables/patient-table'
+import { Button } from '@/components/ui/button'
 
-// Helper to get a patient's full name from the FHIR resource
-function getPatientName(patient: Patient): string {
-  if (!patient.name || patient.name.length === 0) {
-    return "Unknown";
-  }
-  const officialName = patient.name.find(n => n.use === 'official') || patient.name[0];
-  const given = officialName.given?.join(' ') || '';
-  const family = officialName.family || '';
-  return `${given} ${family}`.trim();
+interface Patient {
+  id: string
+  name: { text: string }[]
+  gender: string
+  birthDate: string
 }
 
-export default function ClinicianPatientsPage() {
-  const [searchParams, setSearchParams] = useState({ identifier: "", family: "", given: "" });
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+export default function PatientManagementPage() {
+  const router = useRouter()
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSearch = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setPatients([]);
-
-    const query = new URLSearchParams({
-      identifier: searchParams.identifier,
-      family: searchParams.family,
-      given: searchParams.given,
-    }).toString();
-
-    try {
-      const response = await fetch(`/api/clinician/patients?${query}`);
-
-      // The response from the FHIR server will be proxied through our API.
-      // We need to check the status here and get the detailed error if it's not ok.
-      if (!response.ok) {
-        const errorData = await response.json();
-        // The 'details' field from our backend contains the actual error from the FHIR server
-        throw new Error(errorData.details || `Request failed with status ${response.status}`);
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/clinician/patients')
+        if (!response.ok) {
+          throw new Error('Failed to fetch patients')
+        }
+        const data = await response.json()
+        setPatients(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      } finally {
+        setLoading(false)
       }
-
-      const data = await response.json();
-      setPatients(data.entry?.map((entry: any) => entry.resource) || []);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    fetchPatients()
+  }, [])
 
   return (
     <DashboardLayout userType="clinician">
       <div className="space-y-6">
-        {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Patient Management</h1>
-            <p className="text-muted-foreground">Search, view, and manage patient records.</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Patient Management
+            </h1>
+            <p className="text-muted-foreground">
+              Viewing all patients from the cached bulk import.
+            </p>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => router.push('/dashboard/clinician/patients/new')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Patient
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => router.push('/dashboard/clinician/patients/new')}>
+              New Patient
+            </Button>
+            <Button onClick={() => router.push('/dashboard/clinician')} variant="outline">
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
 
-        {/* Search Form */}
-        <Card>
-          <CardContent className="p-6">
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Input
-                  placeholder="Patient Identifier (MRN, SSN)..."
-                  value={searchParams.identifier}
-                  onChange={(e) => setSearchParams({ ...searchParams, identifier: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="relative flex-1">
-                <Input
-                  placeholder="Family Name (Optional)..."
-                  value={searchParams.family}
-                  onChange={(e) => setSearchParams({ ...searchParams, family: e.target.value })}
-                />
-              </div>
-              <div className="relative flex-1">
-                <Input
-                  placeholder="Given Name (Optional)..."
-                  value={searchParams.given}
-                  onChange={(e) => setSearchParams({ ...searchParams, given: e.target.value })}
-                />
-              </div>
-              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-                {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
-                Search
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {loading && <p>Loading patients...</p>}
+        {error && <p className="text-destructive">Error: {error}</p>}
 
-        {/* Patients Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Search Results ({patients.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error Fetching Patients</AlertTitle>
-                <AlertDescription>
-                  <pre className="whitespace-pre-wrap font-mono text-xs">{error}</pre>
-                </AlertDescription>
-              </Alert>
-            )}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Date of Birth</TableHead>
-                  <TableHead>Gender</TableHead>
-                  <TableHead>Patient ID</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center">
-                      <Loader2 className="w-6 h-6 mx-auto my-8 animate-spin" />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  patients.map((patient) => (
-                    <TableRow
-                      key={patient.id}
-                      onClick={() => router.push(`/dashboard/clinician/patients/${patient.id}`)}
-                      className="hover:bg-muted/50 cursor-pointer"
-                    >
-                      <TableCell className="font-medium">{getPatientName(patient)}</TableCell>
-                      <TableCell>{patient.birthDate}</TableCell>
-                      <TableCell>{patient.gender}</TableCell>
-                      <TableCell className="font-mono">{patient.id}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            {!isLoading && patients.length === 0 && !error && (
-              <p className="text-center text-muted-foreground py-8">No patients found. Try a different search.</p>
-            )}
-          </CardContent>
-        </Card>
+        {!loading && !error && (
+          <PatientTable patients={{ data: patients, source: 'cache' }} />
+        )}
       </div>
     </DashboardLayout>
   )
