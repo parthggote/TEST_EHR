@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -15,16 +16,21 @@ interface Medication {
 }
 
 interface MedicationTableProps {
-  medications: Medication[]
+  medications: { data: Medication[]; source: string | null }
 }
 
 export function MedicationTable({ medications }: MedicationTableProps) {
-  if (medications.length === 0) return null
+  if (medications.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Medication Requests</CardTitle>
+        {medications.source && (
+          <Badge variant={medications.source === 'cache' ? 'secondary' : 'default'}>
+            {medications.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -35,7 +41,7 @@ export function MedicationTable({ medications }: MedicationTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {medications.map((item) => (
+            {medications.data.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>
                   {item.medicationCodeableConcept?.text || 'N/A'}

@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -14,16 +15,21 @@ interface Practitioner {
 }
 
 interface PractitionerTableProps {
-  practitioners: Practitioner[]
+  practitioners: { data: Practitioner[]; source: string | null }
 }
 
 export function PractitionerTable({ practitioners }: PractitionerTableProps) {
-  if (practitioners.length === 0) return null
+  if (practitioners.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Practitioners</CardTitle>
+        {practitioners.source && (
+          <Badge variant={practitioners.source === 'cache' ? 'secondary' : 'default'}>
+            {practitioners.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -33,7 +39,7 @@ export function PractitionerTable({ practitioners }: PractitionerTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {practitioners.map((item) => (
+            {practitioners.data.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name?.[0]?.text || 'N/A'}</TableCell>
               </TableRow>

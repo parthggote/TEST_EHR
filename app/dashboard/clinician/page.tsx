@@ -21,6 +21,7 @@ type BulkImportStatus =
   | 'starting'
   | 'in-progress'
   | 'complete'
+  | 'fetching'
   | 'error'
 
 // Define types for the data we expect to fetch
@@ -30,51 +31,43 @@ interface Patient {
   gender: string
   birthDate: string
 }
-
 interface Appointment {
   id: string
   description: string
   start: string
   participant: { actor: { display: string } }[]
 }
-
 interface Condition {
   id: string
   code: { text: string }
   subject: { display: string }
 }
-
 interface Medication {
   id: string
   medicationCodeableConcept: { text: string }
   subject: { display: string }
 }
-
 interface AllergyIntolerance {
   id: string
   code: { text: string }
   patient: { display: string }
 }
-
 interface Practitioner {
   id: string
   name: { text: string }[]
 }
-
 interface DiagnosticReport {
   id: string
   code: { text: string }
   subject: { display: string }
   conclusion: string
 }
-
 interface Immunization {
   id: string
   vaccineCode: { text: string }
   patient: { display: string }
   occurrenceDateTime: string
 }
-
 interface Observation {
   id: string
   code: { text: string }
@@ -82,14 +75,12 @@ interface Observation {
   valueQuantity?: { value: number; unit: string }
   valueString?: string
 }
-
 interface DocumentReference {
   id: string
   description: string
   subject: { display: string }
   date: string
 }
-
 interface Procedure {
   id: string
   code: { text: string }
@@ -103,37 +94,36 @@ export default function ClinicianDashboardPage() {
   const [progress, setProgress] = useState<string | null>(null)
   const [manifest, setManifest] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isFetchingData, setIsFetchingData] = useState(false)
 
   // State for the fetched data
-  const [patients, setPatients] = useState<Patient[]>([])
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [conditions, setConditions] = useState<Condition[]>([])
-  const [medications, setMedications] = useState<Medication[]>([])
-  const [allergies, setAllergies] = useState<AllergyIntolerance[]>([])
-  const [practitioners, setPractitioners] = useState<Practitioner[]>([])
-  const [diagnosticReports, setDiagnosticReports] = useState<DiagnosticReport[]>([])
-  const [immunizations, setImmunizations] = useState<Immunization[]>([])
-  const [observations, setObservations] = useState<Observation[]>([])
-  const [documentReferences, setDocumentReferences] = useState<DocumentReference[]>([])
-  const [procedures, setProcedures] = useState<Procedure[]>([])
+  const [patients, setPatients] = useState<{ data: Patient[]; source: string | null }>({ data: [], source: null })
+  const [appointments, setAppointments] = useState<{ data: Appointment[]; source: string | null }>({ data: [], source: null })
+  const [conditions, setConditions] = useState<{ data: Condition[]; source: string | null }>({ data: [], source: null })
+  const [medications, setMedications] = useState<{ data: Medication[]; source: string | null }>({ data: [], source: null })
+  const [allergies, setAllergies] = useState<{ data: AllergyIntolerance[]; source: string | null }>({ data: [], source: null })
+  const [practitioners, setPractitioners] = useState<{ data: Practitioner[]; source: string | null }>({ data: [], source: null })
+  const [diagnosticReports, setDiagnosticReports] = useState<{ data: DiagnosticReport[]; source: string | null }>({ data: [], source: null })
+  const [immunizations, setImmunizations] = useState<{ data: Immunization[]; source: string | null }>({ data: [], source: null })
+  const [observations, setObservations] = useState<{ data: Observation[]; source: string | null }>({ data: [], source: null })
+  const [documentReferences, setDocumentReferences] = useState<{ data: DocumentReference[]; source: string | null }>({ data: [], source: null })
+  const [procedures, setProcedures] = useState<{ data: Procedure[]; source: string | null }>({ data: [], source: null })
 
   const startBulkImport = async () => {
     setImportStatus('starting')
     setError(null)
     setManifest(null)
     // Reset all data states
-    setPatients([])
-    setAppointments([])
-    setConditions([])
-    setMedications([])
-    setAllergies([])
-    setPractitioners([])
-    setDiagnosticReports([])
-    setImmunizations([])
-    setObservations([])
-    setDocumentReferences([])
-    setProcedures([])
+    setPatients({ data: [], source: null })
+    setAppointments({ data: [], source: null })
+    setConditions({ data: [], source: null })
+    setMedications({ data: [], source: null })
+    setAllergies({ data: [], source: null })
+    setPractitioners({ data: [], source: null })
+    setDiagnosticReports({ data: [], source: null })
+    setImmunizations({ data: [], source: null })
+    setObservations({ data: [], source: null })
+    setDocumentReferences({ data: [], source: null })
+    setProcedures({ data: [], source: null })
     try {
       const response = await fetch('/api/clinician/bulk-data/start', {
         method: 'POST',
@@ -151,96 +141,72 @@ export default function ClinicianDashboardPage() {
     }
   }
 
-  const fetchResourceData = async (resourceType: string) => {
-    if (!manifest) return
-    const resourceEntry = manifest.output.find(
-      (o: any) => o.type === resourceType
-    )
-    if (!resourceEntry) {
-      setError(`No ${resourceType} data found in the export manifest.`)
-      return
+  // Effect to automatically fetch all data when manifest is received
+  useEffect(() => {
+    if (importStatus === 'complete' && manifest) {
+      const fetchAllData = async () => {
+        setImportStatus('fetching')
+        setError(null)
+
+        const promises = manifest.output.map((resource: any) => {
+          return fetch('/api/clinician/bulk-data/fetch-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileUrl: resource.url }),
+          })
+          .then(res => {
+            if (!res.ok) {
+              console.error(`Failed to fetch ${resource.type}`)
+              return null; // Return null on failure to not break Promise.all
+            }
+            return res.json().then(result => ({ type: resource.type, ...result }));
+          })
+        });
+
+        const results = await Promise.all(promises);
+
+        results.forEach(result => {
+          if (!result) return; // Skip failed requests
+          const { type, data, source } = result;
+          switch (type) {
+            case 'Patient': setPatients({ data, source }); break;
+            case 'Appointment': setAppointments({ data, source }); break;
+            case 'Condition': setConditions({ data, source }); break;
+            case 'MedicationRequest': setMedications({ data, source }); break;
+            case 'AllergyIntolerance': setAllergies({ data, source }); break;
+            case 'Practitioner': setPractitioners({ data, source }); break;
+            case 'DiagnosticReport': setDiagnosticReports({ data, source }); break;
+            case 'Immunization': setImmunizations({ data, source }); break;
+            case 'Observation': setObservations({ data, source }); break;
+            case 'DocumentReference': setDocumentReferences({ data, source }); break;
+            case 'Procedure': setProcedures({ data, source }); break;
+            default: break;
+          }
+        });
+
+        setImportStatus('complete'); // Or a new status like 'displayed'
+      };
+
+      fetchAllData();
     }
+  }, [manifest, importStatus]);
 
-    setIsFetchingData(true)
-    setError(null)
-    try {
-      const response = await fetch('/api/clinician/bulk-data/fetch-file', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl: resourceEntry.url }),
-      })
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.details || `Failed to fetch ${resourceType} data`)
-      }
-      const data = await response.json()
-
-      switch (resourceType) {
-        case 'Patient':
-          setPatients(data)
-          break
-        case 'Appointment':
-          setAppointments(data)
-          break
-        case 'Condition':
-          setConditions(data)
-          break
-        case 'MedicationRequest':
-          setMedications(data)
-          break
-        case 'AllergyIntolerance':
-          setAllergies(data)
-          break
-        case 'Practitioner':
-          setPractitioners(data)
-          break
-        case 'DiagnosticReport':
-          setDiagnosticReports(data)
-          break
-        case 'Immunization':
-          setImmunizations(data)
-          break
-        case 'Observation':
-          setObservations(data)
-          break
-        case 'DocumentReference':
-          setDocumentReferences(data)
-          break
-        case 'Procedure':
-          setProcedures(data)
-          break
-        default:
-          console.warn(`No display logic for resource type: ${resourceType}`)
-          setError(`Display logic for ${resourceType} is not implemented yet.`)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred')
-    } finally {
-      setIsFetchingData(false)
-    }
-  }
-
+  // Effect for polling status
   useEffect(() => {
     let intervalId: NodeJS.Timeout
-
     const checkStatus = async () => {
       if (!statusUrl) return
-
       try {
         const response = await fetch(
           `/api/clinician/bulk-data/status?url=${encodeURIComponent(statusUrl)}`
         )
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.details || 'Failed to check status')
+          throw new Error('Failed to check status')
         }
-
         const data = await response.json()
-
         if (response.headers.get('X-Progress')) {
           setProgress(response.headers.get('X-Progress'))
         }
-
         if (data.status === 'complete') {
           setManifest(data.manifest)
           setImportStatus('complete')
@@ -252,16 +218,10 @@ export default function ClinicianDashboardPage() {
         setStatusUrl(null)
       }
     }
-
     if (importStatus === 'in-progress' && statusUrl) {
       intervalId = setInterval(checkStatus, 5000)
     }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
+    return () => clearInterval(intervalId)
   }, [importStatus, statusUrl])
 
   return (
@@ -289,25 +249,23 @@ export default function ClinicianDashboardPage() {
             </p>
             <Button
               onClick={startBulkImport}
-              disabled={importStatus === 'starting' || importStatus === 'in-progress'}
+              disabled={importStatus !== 'idle' && importStatus !== 'error'}
             >
-              {importStatus === 'in-progress'
-                ? 'Importing...'
-                : 'Start Bulk Import'}
+              {
+                {
+                  'idle': 'Start Bulk Import',
+                  'error': 'Retry Import',
+                  'starting': 'Starting...',
+                  'in-progress': `Importing... ${progress || ''}`,
+                  'fetching': 'Fetching Data...',
+                  'complete': 'Import Complete'
+                }[importStatus]
+              }
             </Button>
 
-            {importStatus !== 'idle' && (
+            {importStatus !== 'idle' && importStatus !== 'complete' && (
               <div className="pt-4">
-                <h3 className="font-semibold">Import Status:</h3>
-                <p>
-                  Current Status:{' '}
-                  <span className="font-mono bg-muted px-2 py-1 rounded">
-                    {importStatus}
-                  </span>
-                </p>
-                {importStatus === 'in-progress' && progress && (
-                  <p>Progress: {progress}</p>
-                )}
+                <h3 className="font-semibold">Import Status: {importStatus}</h3>
                 {importStatus === 'error' && (
                   <p className="text-destructive">Error: {error}</p>
                 )}
@@ -315,32 +273,6 @@ export default function ClinicianDashboardPage() {
             )}
           </CardContent>
         </Card>
-
-        {importStatus === 'complete' && manifest && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Exported Data</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Import is complete. You can now load the data for each
-                resource type.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {manifest.output.map((o: any) => (
-                  <Button
-                    key={o.type}
-                    variant="outline"
-                    onClick={() => fetchResourceData(o.type)}
-                    disabled={isFetchingData}
-                  >
-                    Load {o.type}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <PatientTable patients={patients} />

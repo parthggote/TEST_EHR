@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -16,7 +17,7 @@ interface Procedure {
 }
 
 interface ProcedureTableProps {
-  procedures: Procedure[]
+  procedures: { data: Procedure[]; source: string | null }
 }
 
 const formatDate = (dateString?: string): string => {
@@ -29,12 +30,17 @@ const formatDate = (dateString?: string): string => {
 }
 
 export function ProcedureTable({ procedures }: ProcedureTableProps) {
-  if (procedures.length === 0) return null
+  if (procedures.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Procedures</CardTitle>
+        {procedures.source && (
+          <Badge variant={procedures.source === 'cache' ? 'secondary' : 'default'}>
+            {procedures.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -46,7 +52,7 @@ export function ProcedureTable({ procedures }: ProcedureTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {procedures.map((item) => (
+            {procedures.data.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.code?.text || 'N/A'}</TableCell>
                 <TableCell>{item.subject?.display || 'N/A'}</TableCell>

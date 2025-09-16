@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -17,7 +18,7 @@ interface Observation {
 }
 
 interface ObservationTableProps {
-  observations: Observation[]
+  observations: { data: Observation[]; source: string | null }
 }
 
 const formatValue = (obs: Observation): string => {
@@ -31,12 +32,17 @@ const formatValue = (obs: Observation): string => {
 }
 
 export function ObservationTable({ observations }: ObservationTableProps) {
-  if (observations.length === 0) return null
+  if (observations.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Observations</CardTitle>
+        {observations.source && (
+          <Badge variant={observations.source === 'cache' ? 'secondary' : 'default'}>
+            {observations.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -48,7 +54,7 @@ export function ObservationTable({ observations }: ObservationTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {observations.map((item) => (
+            {observations.data.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.code?.text || 'N/A'}</TableCell>
                 <TableCell>{formatValue(item)}</TableCell>
