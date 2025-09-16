@@ -1,128 +1,90 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 
-// Define types for the data we expect to fetch
-interface Patient {
-  id: string
-  name: {
-    text: string
-  }[]
-  gender: string
-  birthDate: string
-}
-
-interface Appointment {
-  id: string
-  description: string
-  start: string
-  participant: {
-    actor: {
-      display: string
-    }
-  }[]
-}
-
-interface Condition {
-  id: string
-  code: {
-    text: string
-  }
-  subject: {
-    display: string
-  }
-}
-
-interface Medication {
-  id: string
-  medicationCodeableConcept: {
-    text: string
-  }
-  subject: {
-    display: string
-  }
-}
-
-interface FHIREntry<T> {
-  resource: T;
-}
+type BulkImportStatus =
+  | 'idle'
+  | 'starting'
+  | 'in-progress'
+  | 'complete'
+  | 'error'
 
 export default function ClinicianDashboardPage() {
-  const [data, setData] = useState({
-    patients: [] as Patient[],
-    appointments: [] as Appointment[],
-    conditions: [] as Condition[],
-    medications: [] as Medication[],
-  })
-  const [loading, setLoading] = useState(true)
+  const [importStatus, setImportStatus] = useState<BulkImportStatus>('idle')
+  const [statusUrl, setStatusUrl] = useState<string | null>(null)
+  const [progress, setProgress] = useState<string | null>(null)
+  const [manifest, setManifest] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const [
-          patientsRes,
-          appointmentsRes,
-          conditionsRes,
-          medicationsRes,
-        ] = await Promise.all([
-          fetch('/api/clinician/patients'),
-          fetch('/api/clinician/appointments'),
-          fetch('/api/clinician/conditions'),
-          fetch('/api/clinician/medications'),
-        ])
+  const startBulkImport = async () => {
+    setImportStatus('starting')
+    setError(null)
+    setManifest(null)
+    try {
+      const response = await fetch('/api/clinician/bulk-data/start', {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || 'Failed to start bulk import')
+      }
+      const { statusUrl } = await response.json()
+      setStatusUrl(statusUrl)
+      setImportStatus('in-progress')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      setImportStatus('error')
+    }
+  }
 
-        if (
-          !patientsRes.ok ||
-          !appointmentsRes.ok ||
-          !conditionsRes.ok ||
-          !medicationsRes.ok
-        ) {
-          throw new Error('Failed to fetch some data')
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout
+
+    const checkStatus = async () => {
+      if (!statusUrl) return
+
+      try {
+        const response = await fetch(
+          `/api/clinician/bulk-data/status?url=${encodeURIComponent(statusUrl)}`
+        )
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.details || 'Failed to check status')
         }
 
-        const patientsData = await patientsRes.json()
-        const appointmentsData = await appointmentsRes.json()
-        const conditionsData = await conditionsRes.json()
-        const medicationsData = await medicationsRes.json()
+        const data = await response.json()
 
-        setData({
-          patients: patientsData.entry?.map((e: FHIREntry<Patient>) => e.resource) || [],
-          appointments:
-            appointmentsData.entry?.map((e: FHIREntry<Appointment>) => e.resource) || [],
-          conditions: conditionsData.entry?.map((e: FHIREntry<Condition>) => e.resource) || [],
-          medications: medicationsData.entry?.map((e: FHIREntry<Medication>) => e.resource) || [],
-        })
+        if (response.headers.get('X-Progress')) {
+          setProgress(response.headers.get('X-Progress'))
+        }
+
+        if (data.status === 'complete') {
+          setManifest(data.manifest)
+          setImportStatus('complete')
+          setStatusUrl(null) // Stop polling
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
-      } finally {
-        setLoading(false)
+        setImportStatus('error')
+        setStatusUrl(null) // Stop polling
       }
     }
 
-    fetchData()
-  }, [])
-
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'N/A'
-    try {
-      return new Date(dateString).toLocaleDateString()
-    } catch {
-      return dateString
+    if (importStatus === 'in-progress' && statusUrl) {
+      // Poll every 5 seconds
+      intervalId = setInterval(checkStatus, 5000)
     }
-  }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [importStatus, statusUrl])
 
   return (
     <DashboardLayout userType="clinician">
@@ -130,124 +92,66 @@ export default function ClinicianDashboardPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Clinician Dashboard
+              Bulk Data Management
             </h1>
             <p className="text-muted-foreground">
-              An overview of patients, appointments, and clinical data.
+              Import and manage data for all patients in the test group.
             </p>
           </div>
         </div>
 
-        {loading && <p>Loading data...</p>}
-        {error && <p className="text-destructive">Error: {error}</p>}
+        <Card>
+          <CardHeader>
+            <CardTitle>Import Patient Data</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>
+              Click the button below to start the bulk import process for all
+              test patients in the group. This will fetch all available data
+              from the FHIR server.
+            </p>
+            <Button
+              onClick={startBulkImport}
+              disabled={importStatus === 'starting' || importStatus === 'in-progress'}
+            >
+              {importStatus === 'in-progress'
+                ? 'Importing...'
+                : 'Start Bulk Import'}
+            </Button>
 
-        {!loading && !error && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Patients</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Gender</TableHead>
-                      <TableHead>Birth Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.patients.slice(0, 5).map((patient) => (
-                      <TableRow key={patient.id}>
-                        <TableCell>{patient.name?.[0]?.text || 'N/A'}</TableCell>
-                        <TableCell>{patient.gender}</TableCell>
-                        <TableCell>{formatDate(patient.birthDate)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Appointments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.appointments.slice(0, 5).map((appointment) => (
-                      <TableRow key={appointment.id}>
-                        <TableCell>{appointment.description}</TableCell>
-                        <TableCell>
-                          {appointment.participant?.[0]?.actor.display}
-                        </TableCell>
-                        <TableCell>{formatDate(appointment.start)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Conditions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Condition</TableHead>
-                      <TableHead>Patient</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.conditions.slice(0, 5).map((condition) => (
-                      <TableRow key={condition.id}>
-                        <TableCell>{condition.code.text}</TableCell>
-                        <TableCell>{condition.subject.display}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Medication Requests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Medication</TableHead>
-                      <TableHead>Patient</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.medications.slice(0, 5).map((medication) => (
-                      <TableRow key={medication.id}>
-                        <TableCell>
-                          {medication.medicationCodeableConcept.text}
-                        </TableCell>
-                        <TableCell>{medication.subject.display}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+            {importStatus !== 'idle' && (
+              <div className="pt-4">
+                <h3 className="font-semibold">Import Status:</h3>
+                <p>
+                  Current Status:{' '}
+                  <span className="font-mono bg-muted px-2 py-1 rounded">
+                    {importStatus}
+                  </span>
+                </p>
+                {importStatus === 'in-progress' && progress && (
+                  <p>Progress: {progress}</p>
+                )}
+                {importStatus === 'error' && (
+                  <p className="text-destructive">Error: {error}</p>
+                )}
+                {importStatus === 'complete' && manifest && (
+                  <div>
+                    <h3 className="font-semibold mt-4">
+                      Import Complete!
+                    </h3>
+                    <p>
+                      The following data has been exported. In a future step,
+                      this data would be parsed and stored in the database.
+                    </p>
+                    <pre className="mt-2 p-4 bg-muted rounded-md overflow-x-auto text-sm">
+                      {JSON.stringify(manifest, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   )

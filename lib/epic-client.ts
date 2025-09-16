@@ -601,8 +601,11 @@ export class EpicFHIRClient {
   }
 
   // Bulk Data Operations
-  async kickOffBulkExport(accessToken: string): Promise<string> {
-    const exportUrl = `${this.config.baseUrl}$export`;
+  async kickOffBulkExport(accessToken: string, groupId?: string): Promise<string> {
+    let exportUrl = `${this.config.baseUrl}$export`;
+    if (groupId) {
+      exportUrl = `${this.config.baseUrl}Group/${groupId}/$export`;
+    }
 
     const response = await fetch(exportUrl, {
       method: 'GET',
