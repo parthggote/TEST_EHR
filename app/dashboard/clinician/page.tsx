@@ -4,14 +4,10 @@ import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { PatientTable } from '@/components/resource-tables/patient-table'
+import { AppointmentTable } from '@/components/resource-tables/appointment-table'
+import { ConditionTable } from '@/components/resource-tables/condition-table'
+import { MedicationTable } from '@/components/resource-tables/medication-table'
 
 type BulkImportStatus =
   | 'idle'
@@ -120,11 +116,12 @@ export default function ClinicianDashboardPage() {
         case 'Condition':
           setConditions(data)
           break
-        case 'MedicationRequest': // Note: The type in manifest might be MedicationRequest
+        case 'MedicationRequest':
           setMedications(data)
           break
         default:
           console.warn(`No display logic for resource type: ${resourceType}`)
+          setError(`Display logic for ${resourceType} is not implemented.`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
@@ -176,15 +173,6 @@ export default function ClinicianDashboardPage() {
       }
     }
   }, [importStatus, statusUrl])
-
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'N/A'
-    try {
-      return new Date(dateString).toLocaleDateString()
-    } catch {
-      return dateString
-    }
-  }
 
   return (
     <DashboardLayout userType="clinician">
@@ -264,69 +252,12 @@ export default function ClinicianDashboardPage() {
           </Card>
         )}
 
-        {patients.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle>Patients</CardTitle></CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Gender</TableHead><TableHead>Birth Date</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {patients.map((item) => (
-                    <TableRow key={item.id}><TableCell>{item.name?.[0]?.text || 'N/A'}</TableCell><TableCell>{item.gender}</TableCell><TableCell>{formatDate(item.birthDate)}</TableCell></TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {appointments.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle>Appointments</CardTitle></CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>Description</TableHead><TableHead>Patient</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {appointments.map((item) => (
-                    <TableRow key={item.id}><TableCell>{item.description}</TableCell><TableCell>{item.participant?.[0]?.actor.display}</TableCell><TableCell>{formatDate(item.start)}</TableCell></TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {conditions.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle>Conditions</CardTitle></CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>Condition</TableHead><TableHead>Patient</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {conditions.map((item) => (
-                    <TableRow key={item.id}><TableCell>{item.code.text}</TableCell><TableCell>{item.subject.display}</TableCell></TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {medications.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle>Medication Requests</CardTitle></CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>Medication</TableHead><TableHead>Patient</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {medications.map((item) => (
-                    <TableRow key={item.id}><TableCell>{item.medicationCodeableConcept.text}</TableCell><TableCell>{item.subject.display}</TableCell></TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PatientTable patients={patients} />
+          <AppointmentTable appointments={appointments} />
+          <ConditionTable conditions={conditions} />
+          <MedicationTable medications={medications} />
+        </div>
       </div>
     </DashboardLayout>
   )

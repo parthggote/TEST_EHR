@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import CryptoJS from 'crypto-js'
+import { connectToDatabase } from '@/lib/mongodb'
 
 // Helper function to get and decrypt the access token
 function getAccessToken(): string | null {
@@ -44,6 +45,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'fileUrl is required' }, { status: 400 })
     }
 
+    const { db } = await connectToDatabase()
+    const cacheCollection = db.collection('bulk_data_files')
+
+    // Check cache first
+    const cachedData = await cacheCollection.findOne({ fileUrl })
+    if (cachedData) {
+      console.log(`CACHE HIT: Returning data for ${fileUrl} from cache.`)
+      return NextResponse.json(cachedData.data)
+    }
+
+    console.log(`CACHE MISS: Data for ${fileUrl} not found. Fetching from API.`)
     const response = await fetch(fileUrl, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -58,6 +70,14 @@ export async function POST(request: NextRequest) {
 
     const ndjson = await response.text()
     const data = parseNdjson(ndjson)
+
+    // Store in cache
+    await cacheCollection.insertOne({
+      fileUrl,
+      data,
+      createdAt: new Date(),
+    })
+    console.log(`CACHE POPULATE: Stored data for ${fileUrl}.`)
 
     return NextResponse.json(data)
   } catch (error) {
