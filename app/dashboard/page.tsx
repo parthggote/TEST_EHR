@@ -210,8 +210,8 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading patient data...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading patient data...</p>
         </div>
       </div>
     );
@@ -222,7 +222,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-destructive">Error</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -238,16 +238,16 @@ export default function DashboardPage() {
   const tokenStatus = getTokenExpirationStatus();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <Shield className="h-8 w-8 text-blue-600" />
+              <Shield className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">EHR_Dashboard - Patient</h1>
-                <p className="text-sm text-gray-500">Epic FHIR • HIPAA Compliant</p>
+                <h1 className="text-xl font-semibold text-foreground">EHR_Dashboard - Patient</h1>
+                <p className="text-sm text-muted-foreground">Epic FHIR • HIPAA Compliant</p>
               </div>
             </div>
             
@@ -255,7 +255,7 @@ export default function DashboardPage() {
               <ThemeToggle />
               {/* Token Status */}
               <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-gray-400" />
+                <Clock className="h-4 w-4 text-muted-foreground" />
                 <Badge 
                   variant={tokenStatus.status === 'valid' ? 'default' : tokenStatus.status === 'expiring' ? 'secondary' : 'destructive'}
                 >
@@ -278,8 +278,8 @@ export default function DashboardPage() {
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center space-x-4">
-                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-blue-600" />
+                <div className="h-12 w-12 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6" />
                 </div>
                 <div>
                   <CardTitle className="text-2xl">{formatPatientName(patient)}</CardTitle>
@@ -482,8 +482,8 @@ export default function DashboardPage() {
                 <CardDescription>Generate reports and view analytics</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                   <p>Reporting features will be implemented here</p>
                 </div>
               </CardContent>
