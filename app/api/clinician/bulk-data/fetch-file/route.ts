@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { fileUrl, fileType } = await request.json()
+    const { fileUrl } = await request.json()
 
-    if (!fileUrl || !fileType) {
-      return NextResponse.json({ error: 'fileUrl and fileType are required' }, { status: 400 })
+    if (!fileUrl) {
+      return NextResponse.json({ error: 'fileUrl is required' }, { status: 400 })
     }
 
     const { db } = await connectToDatabase()
@@ -74,7 +74,6 @@ export async function POST(request: NextRequest) {
     // Store in cache
     await cacheCollection.insertOne({
       fileUrl,
-      fileType,
       data,
       createdAt: new Date(),
     })
