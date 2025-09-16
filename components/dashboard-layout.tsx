@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
 const patientNavigation = [
@@ -58,10 +59,10 @@ export function DashboardLayout({ children, userType = "patient" }: DashboardLay
   const pathname = usePathname()
   const navigation = userType === "clinician" ? clinicianNavigation : patientNavigation
   const logoutUrl = userType === "clinician" ? "/api/auth/clinician/logout" : "/api/auth/logout"
-  const portalTitle = userType === "clinician" ? "Clinician Portal" : "Patient Dashboard"
+  const portalTitle = userType === "clinician" ? "EHR_Dashboard - Clinician" : "EHR_Dashboard - Patient"
 
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       {/* Mobile sidebar */}
       <div className={cn("fixed inset-0 z-50 lg:hidden", sidebarOpen ? "block" : "hidden")}>
         <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
@@ -141,6 +142,7 @@ export function DashboardLayout({ children, userType = "patient" }: DashboardLay
             </div>
 
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <Button variant="ghost" size="sm" className="relative">
                 <Bell className="w-4 h-4" />
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-600 rounded-full" />
