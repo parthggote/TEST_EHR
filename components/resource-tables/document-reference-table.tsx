@@ -48,8 +48,8 @@ export function DocumentReferenceTable({ documents }: DocumentReferenceTableProp
           <TableBody>
             {documents.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>{item.description || 'N/A'}</TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.date)}</TableCell>
               </TableRow>
             ))}

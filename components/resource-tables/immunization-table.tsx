@@ -48,8 +48,8 @@ export function ImmunizationTable({ immunizations }: ImmunizationTableProps) {
           <TableBody>
             {immunizations.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.vaccineCode.text}</TableCell>
-                <TableCell>{item.patient.display}</TableCell>
+                <TableCell>{item.vaccineCode?.text || 'N/A'}</TableCell>
+                <TableCell>{item.patient?.display || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.occurrenceDateTime)}</TableCell>
               </TableRow>
             ))}

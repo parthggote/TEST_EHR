@@ -50,9 +50,9 @@ export function ObservationTable({ observations }: ObservationTableProps) {
           <TableBody>
             {observations.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.code.text}</TableCell>
+                <TableCell>{item.code?.text || 'N/A'}</TableCell>
                 <TableCell>{formatValue(item)}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

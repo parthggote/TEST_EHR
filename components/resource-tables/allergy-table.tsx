@@ -37,8 +37,8 @@ export function AllergyTable({ allergies }: AllergyTableProps) {
           <TableBody>
             {allergies.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.code.text}</TableCell>
-                <TableCell>{item.patient.display}</TableCell>
+                <TableCell>{item.code?.text || 'N/A'}</TableCell>
+                <TableCell>{item.patient?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

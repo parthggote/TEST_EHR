@@ -48,8 +48,10 @@ export function AppointmentTable({ appointments }: AppointmentTableProps) {
           <TableBody>
             {appointments.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>{item.participant?.[0]?.actor.display}</TableCell>
+                <TableCell>{item.description || 'N/A'}</TableCell>
+                <TableCell>
+                  {item.participant?.[0]?.actor?.display || 'N/A'}
+                </TableCell>
                 <TableCell>{formatDate(item.start)}</TableCell>
               </TableRow>
             ))}

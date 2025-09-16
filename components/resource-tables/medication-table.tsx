@@ -37,8 +37,10 @@ export function MedicationTable({ medications }: MedicationTableProps) {
           <TableBody>
             {medications.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.medicationCodeableConcept.text}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>
+                  {item.medicationCodeableConcept?.text || 'N/A'}
+                </TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

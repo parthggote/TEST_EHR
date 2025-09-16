@@ -49,7 +49,7 @@ export function PatientTable({ patients }: PatientTableProps) {
             {patients.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name?.[0]?.text || 'N/A'}</TableCell>
-                <TableCell>{item.gender}</TableCell>
+                <TableCell>{item.gender || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.birthDate)}</TableCell>
               </TableRow>
             ))}

@@ -37,8 +37,8 @@ export function ConditionTable({ conditions }: ConditionTableProps) {
           <TableBody>
             {conditions.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.code.text}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>{item.code?.text || 'N/A'}</TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
