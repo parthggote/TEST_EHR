@@ -212,11 +212,13 @@ export class EpicFHIRClient {
    * Make authenticated FHIR API request with retry logic
    */
   private async makeRequest<T>(
-    endpoint: string, 
-    accessToken: string, 
+    endpointOrUrl: string,
+    accessToken: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.config.baseUrl}${endpoint}`;
+    const url = endpointOrUrl.startsWith('http')
+      ? endpointOrUrl
+      : `${this.config.baseUrl}${endpointOrUrl}`;
     let retryCount = 0;
     const maxRetries = 3;
 
@@ -256,7 +258,7 @@ export class EpicFHIRClient {
 
           this.auditLog('FHIR_REQUEST_ERROR', {
             timestamp: new Date().toISOString(),
-            endpoint,
+            endpoint: endpointOrUrl,
             status: response.status,
             error: operationOutcome?.issue?.[0]?.diagnostics || errorBody
           });
@@ -272,7 +274,7 @@ export class EpicFHIRClient {
         // Log successful request (without PHI)
         this.auditLog('FHIR_REQUEST_SUCCESS', {
           timestamp: new Date().toISOString(),
-          endpoint,
+          endpoint: endpointOrUrl,
           resourceType: data.resourceType || 'Bundle'
         });
 
@@ -342,6 +344,10 @@ export class EpicFHIRClient {
     return this.makeRequest<OperationOutcome>(`Patient/${patientId}`, accessToken, {
       method: 'DELETE'
     });
+  }
+
+  async fetchByUrl<T>(url: string, accessToken: string): Promise<T> {
+    return this.makeRequest<T>(url, accessToken);
   }
 
   // Appointment Operations
