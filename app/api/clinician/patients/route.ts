@@ -31,7 +31,7 @@ function getAccessToken(): string | null {
   }
 }
 
-import { Patient, FHIRBundle } from '@/lib/types/fhir';
+import { connectToDatabase } from '@/lib/mongodb';
 
 export async function GET(request: NextRequest) {
   const accessToken = getAccessToken();
@@ -43,35 +43,26 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const fetchAll = searchParams.get('_fetchAll') === 'true';
-    const epicClient = new EpicFHIRClient('clinician');
 
     if (fetchAll) {
-      let allPatients: Patient[] = [];
-      let nextUrl: string | undefined;
+      const { db } = await connectToDatabase();
+      const cacheCollection = db.collection('bulk_data_files');
 
-      // Initial search with a larger page count
-      const initialSearchCriteria = { _count: '100' };
-      let bundle: FHIRBundle = await epicClient.searchPatients(accessToken, initialSearchCriteria);
+      const patientDataCache = await cacheCollection.findOne(
+        { fileType: 'Patient' },
+        { sort: { createdAt: -1 } }
+      );
 
-      if (bundle.entry) {
-        allPatients = allPatients.concat(bundle.entry.map((e: any) => e.resource));
+      if (patientDataCache && Array.isArray(patientDataCache.data)) {
+        const patients = patientDataCache.data;
+        return NextResponse.json({ entry: patients.map(p => ({ resource: p })) });
+      } else {
+        // No patient data in cache, return empty list
+        return NextResponse.json({ entry: [] });
       }
-
-      nextUrl = bundle.link?.find(l => l.relation === 'next')?.url;
-
-      while (nextUrl) {
-        const nextBundle: FHIRBundle = await epicClient.fetchByUrl(nextUrl, accessToken);
-        if (nextBundle.entry) {
-          allPatients = allPatients.concat(nextBundle.entry.map((e: any) => e.resource));
-        }
-        nextUrl = nextBundle.link?.find(l => l.relation === 'next')?.url;
-      }
-
-      // Return in a format consistent with a bundle search result
-      return NextResponse.json({ entry: allPatients.map(p => ({ resource: p })) });
     }
 
-    // Existing search logic for single-page results
+    // Existing search logic for single-page results from live API
     const searchCriteria = {
       family: searchParams.get('family') || undefined,
       given: searchParams.get('given') || undefined,
@@ -80,6 +71,7 @@ export async function GET(request: NextRequest) {
       _count: searchParams.get('_count') || '10', // Default to 10 results
     };
 
+    const epicClient = new EpicFHIRClient('clinician');
     const searchResults = await epicClient.searchPatients(accessToken, searchCriteria);
 
     return NextResponse.json(searchResults);
