@@ -600,6 +600,26 @@ export class EpicFHIRClient {
     });
   }
 
+  // Billing Operations
+  async searchExplanationOfBenefit(
+    accessToken: string,
+    params: { patient?: string; [key: string]: any }
+  ): Promise<FHIRBundle> {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, value);
+    });
+
+    return this.makeRequest<FHIRBundle>(`ExplanationOfBenefit?${searchParams.toString()}`, accessToken);
+  }
+
+  async createChargeItem(accessToken: string, chargeItem: any): Promise<any> {
+    return this.makeRequest('ChargeItem', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(chargeItem),
+    });
+  }
+
   // Bulk Data Operations
   async kickOffBulkExport(accessToken: string, groupId?: string): Promise<string> {
     let exportUrl = `${this.config.baseUrl}$export`;

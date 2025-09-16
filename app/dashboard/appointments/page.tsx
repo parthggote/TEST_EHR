@@ -169,8 +169,8 @@ export default function AppointmentsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="date">Date</Label>
-                      <Input id="date" name="date" type="date" defaultValue="2024-01-15" />
+                      <Label htmlFor="appointment-date">Date</Label>
+                      <Input id="appointment-date" name="appointment-date" type="date" defaultValue="2024-01-15" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="time">Time</Label>
