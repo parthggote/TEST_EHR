@@ -84,26 +84,26 @@ export default function StatusPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Checking system status...</p>
+          <p className="text-muted-foreground">Checking system status...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <Settings className="h-8 w-8 text-blue-600" />
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">System Status</h1>
-                <p className="text-sm text-gray-500">Epic FHIR Integration Status</p>
+                <h1 className="text-xl font-semibold text-foreground">System Status</h1>
+                <p className="text-sm text-muted-foreground">Epic FHIR Integration Status</p>
               </div>
             </div>
             
@@ -137,7 +137,7 @@ export default function StatusPage() {
                 <h3 className="text-lg font-medium">
                   {status?.useMockData ? 'Mock Data Mode' : 'Live Epic API Mode'}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   {status?.useMockData 
                     ? 'Using synthetic test data for development'
                     : 'Connected to Epic FHIR sandbox/production API'
