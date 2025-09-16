@@ -30,6 +30,7 @@ import {
   FHIRBundle
 } from '@/lib/types/fhir';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface TokenMetadata {
   scope: string;
@@ -245,12 +246,13 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-4">
               <Shield className="h-8 w-8 text-blue-600" />
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">EHR Integration Dashboard</h1>
+                <h1 className="text-xl font-semibold text-gray-900">EHR_Dashboard - Patient</h1>
                 <p className="text-sm text-gray-500">Epic FHIR • HIPAA Compliant</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               {/* Token Status */}
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-gray-400" />

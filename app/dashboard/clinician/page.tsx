@@ -4,6 +4,11 @@
  */
 
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'EHR_Dashboard - Clinician',
+};
 
 export default function ClinicianDashboardPage() {
   return (
@@ -11,7 +16,7 @@ export default function ClinicianDashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Clinician Portal</h1>
+            <h1 className="text-3xl font-bold text-foreground">EHR_Dashboard - Clinician</h1>
             <p className="text-muted-foreground">
               Welcome to the secure clinician dashboard.
             </p>
