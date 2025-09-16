@@ -174,6 +174,8 @@ export default function ClinicianAppointmentsPage() {
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Input
+                  id="appointments-patient-id-search"
+                  name="appointments-patient-id-search"
                   placeholder="Enter Patient ID to find appointments..."
                   value={patientId}
                   onChange={(e) => setPatientId(e.target.value)}
