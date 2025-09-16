@@ -16,11 +16,30 @@ import { ProcedureTable } from '@/components/resource-tables/procedure-table'
 
 export default function PatientDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const { patientId } = params
 
   const [patientData, setPatientData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const handleDelete = async () => {
+    if (!patientId) return
+    if (window.confirm('Are you sure you want to delete this patient from the cache?')) {
+      try {
+        const response = await fetch(`/api/clinician/patients/${patientId}`, {
+          method: 'DELETE',
+        })
+        if (!response.ok) {
+          throw new Error('Failed to delete patient')
+        }
+        router.push('/dashboard/clinician/patients')
+        router.refresh()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      }
+    }
+  }
 
   useEffect(() => {
     if (!patientId) return
@@ -62,9 +81,15 @@ export default function PatientDetailPage() {
               Viewing details for patient ID: {patientId}
             </p>
           </div>
-          <Button asChild>
-            <Link href="/dashboard/clinician/patients">Back to Patient List</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href={`/dashboard/clinician/patients/${patientId}/edit`}>Edit</Link>
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button asChild>
+              <Link href="/dashboard/clinician/patients">Back to Patient List</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

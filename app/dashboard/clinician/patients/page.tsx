@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { PatientTable } from '@/components/resource-tables/patient-table'
@@ -14,6 +15,7 @@ interface Patient {
 }
 
 export default function PatientManagementPage() {
+  const router = useRouter()
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -50,9 +52,14 @@ export default function PatientManagementPage() {
               Viewing all patients from the cached bulk import.
             </p>
           </div>
-          <Button asChild>
-            <Link href="/dashboard/clinician">Back to Dashboard</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild>
+              <Link href="/dashboard/clinician/patients/new">New Patient</Link>
+            </Button>
+            <Button onClick={() => router.push('/dashboard/clinician')} variant="outline">
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
 
         {loading && <p>Loading patients...</p>}
