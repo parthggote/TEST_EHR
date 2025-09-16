@@ -127,6 +127,9 @@ export default function ClinicianDashboardPage() {
     setDocumentReferences({ data: [], source: null })
     setProcedures({ data: [], source: null })
     try {
+      // Clear the cache first
+      await fetch('/api/clinician/bulk-data/clear-cache', { method: 'POST' })
+
       const response = await fetch('/api/clinician/bulk-data/start', {
         method: 'POST',
       })
@@ -159,7 +162,7 @@ export default function ClinicianDashboardPage() {
           return fetch('/api/clinician/bulk-data/fetch-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileUrl: resource.url }),
+            body: JSON.stringify({ fileUrl: resource.url, resourceType: resource.type }),
           })
           .then(res => {
             if (!res.ok) {

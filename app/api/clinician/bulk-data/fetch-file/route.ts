@@ -31,6 +31,11 @@ function parseNdjson(ndjson: string): any[] {
     .map((line) => JSON.parse(line))
 }
 
+// A simple mapping from FHIR resourceType to a collection name
+function getCollectionName(resourceType: string): string {
+  return resourceType.toLowerCase() + 's'
+}
+
 export async function POST(request: NextRequest) {
   const accessToken = getAccessToken()
 
@@ -39,23 +44,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { fileUrl } = await request.json()
+    const { fileUrl, resourceType } = await request.json()
 
-    if (!fileUrl) {
-      return NextResponse.json({ error: 'fileUrl is required' }, { status: 400 })
+    if (!fileUrl || !resourceType) {
+      return NextResponse.json({ error: 'fileUrl and resourceType are required' }, { status: 400 })
     }
 
-    const { db } = await connectToDatabase()
-    const cacheCollection = db.collection('bulk_data_files')
+    // Note: The cache check is removed as per the new workflow.
+    // The new workflow clears the cache at the start of an import.
 
-    // Check cache first
-    const cachedData = await cacheCollection.findOne({ fileUrl })
-    if (cachedData) {
-      console.log(`CACHE HIT: Returning data for ${fileUrl} from cache.`)
-      return NextResponse.json({ data: cachedData.data, source: 'cache' })
-    }
-
-    console.log(`CACHE MISS: Data for ${fileUrl} not found. Fetching from API.`)
     const response = await fetch(fileUrl, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -71,14 +68,17 @@ export async function POST(request: NextRequest) {
     const ndjson = await response.text()
     const data = parseNdjson(ndjson)
 
-    // Store in cache
-    await cacheCollection.insertOne({
-      fileUrl,
-      data,
-      createdAt: new Date(),
-    })
-    console.log(`CACHE POPULATE: Stored data for ${fileUrl}.`)
+    if (data.length > 0) {
+      const { db } = await connectToDatabase()
+      const collectionName = getCollectionName(resourceType)
+      const collection = db.collection(collectionName)
 
+      // Insert the new data
+      await collection.insertMany(data)
+      console.log(`CACHE POPULATE: Stored ${data.length} ${resourceType} resources in '${collectionName}'.`)
+    }
+
+    // Return the data and source for the UI
     return NextResponse.json({ data, source: 'api' })
   } catch (error) {
     console.error('Failed to fetch or parse bulk data file:', error)
