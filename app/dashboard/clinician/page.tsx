@@ -8,6 +8,13 @@ import { PatientTable } from '@/components/resource-tables/patient-table'
 import { AppointmentTable } from '@/components/resource-tables/appointment-table'
 import { ConditionTable } from '@/components/resource-tables/condition-table'
 import { MedicationTable } from '@/components/resource-tables/medication-table'
+import { AllergyTable } from '@/components/resource-tables/allergy-table'
+import { PractitionerTable } from '@/components/resource-tables/practitioner-table'
+import { DiagnosticReportTable } from '@/components/resource-tables/diagnostic-report-table'
+import { ImmunizationTable } from '@/components/resource-tables/immunization-table'
+import { ObservationTable } from '@/components/resource-tables/observation-table'
+import { DocumentReferenceTable } from '@/components/resource-tables/document-reference-table'
+import { ProcedureTable } from '@/components/resource-tables/procedure-table'
 
 type BulkImportStatus =
   | 'idle'
@@ -43,6 +50,53 @@ interface Medication {
   subject: { display: string }
 }
 
+interface AllergyIntolerance {
+  id: string
+  code: { text: string }
+  patient: { display: string }
+}
+
+interface Practitioner {
+  id: string
+  name: { text: string }[]
+}
+
+interface DiagnosticReport {
+  id: string
+  code: { text: string }
+  subject: { display: string }
+  conclusion: string
+}
+
+interface Immunization {
+  id: string
+  vaccineCode: { text: string }
+  patient: { display: string }
+  occurrenceDateTime: string
+}
+
+interface Observation {
+  id: string
+  code: { text: string }
+  subject: { display: string }
+  valueQuantity?: { value: number; unit: string }
+  valueString?: string
+}
+
+interface DocumentReference {
+  id: string
+  description: string
+  subject: { display: string }
+  date: string
+}
+
+interface Procedure {
+  id: string
+  code: { text: string }
+  subject: { display: string }
+  performedDateTime: string
+}
+
 export default function ClinicianDashboardPage() {
   const [importStatus, setImportStatus] = useState<BulkImportStatus>('idle')
   const [statusUrl, setStatusUrl] = useState<string | null>(null)
@@ -56,15 +110,30 @@ export default function ClinicianDashboardPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [conditions, setConditions] = useState<Condition[]>([])
   const [medications, setMedications] = useState<Medication[]>([])
+  const [allergies, setAllergies] = useState<AllergyIntolerance[]>([])
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([])
+  const [diagnosticReports, setDiagnosticReports] = useState<DiagnosticReport[]>([])
+  const [immunizations, setImmunizations] = useState<Immunization[]>([])
+  const [observations, setObservations] = useState<Observation[]>([])
+  const [documentReferences, setDocumentReferences] = useState<DocumentReference[]>([])
+  const [procedures, setProcedures] = useState<Procedure[]>([])
 
   const startBulkImport = async () => {
     setImportStatus('starting')
     setError(null)
     setManifest(null)
+    // Reset all data states
     setPatients([])
     setAppointments([])
     setConditions([])
     setMedications([])
+    setAllergies([])
+    setPractitioners([])
+    setDiagnosticReports([])
+    setImmunizations([])
+    setObservations([])
+    setDocumentReferences([])
+    setProcedures([])
     try {
       const response = await fetch('/api/clinician/bulk-data/start', {
         method: 'POST',
@@ -119,9 +188,30 @@ export default function ClinicianDashboardPage() {
         case 'MedicationRequest':
           setMedications(data)
           break
+        case 'AllergyIntolerance':
+          setAllergies(data)
+          break
+        case 'Practitioner':
+          setPractitioners(data)
+          break
+        case 'DiagnosticReport':
+          setDiagnosticReports(data)
+          break
+        case 'Immunization':
+          setImmunizations(data)
+          break
+        case 'Observation':
+          setObservations(data)
+          break
+        case 'DocumentReference':
+          setDocumentReferences(data)
+          break
+        case 'Procedure':
+          setProcedures(data)
+          break
         default:
           console.warn(`No display logic for resource type: ${resourceType}`)
-          setError(`Display logic for ${resourceType} is not implemented.`)
+          setError(`Display logic for ${resourceType} is not implemented yet.`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
@@ -257,6 +347,13 @@ export default function ClinicianDashboardPage() {
           <AppointmentTable appointments={appointments} />
           <ConditionTable conditions={conditions} />
           <MedicationTable medications={medications} />
+          <AllergyTable allergies={allergies} />
+          <PractitionerTable practitioners={practitioners} />
+          <DiagnosticReportTable reports={diagnosticReports} />
+          <ImmunizationTable immunizations={immunizations} />
+          <ObservationTable observations={observations} />
+          <DocumentReferenceTable documents={documentReferences} />
+          <ProcedureTable procedures={procedures} />
         </div>
       </div>
     </DashboardLayout>
