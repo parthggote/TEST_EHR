@@ -213,8 +213,8 @@ export default function BillingPage() {
                     <Input id="description" name="description" placeholder="Service description" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date">Service Date</Label>
-                    <Input id="date" name="date" type="date" defaultValue="2024-01-15" />
+                    <Label htmlFor="charge-service-date">Service Date</Label>
+                    <Input id="charge-service-date" name="charge-service-date" type="date" defaultValue="2024-01-15" />
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
                     <Button variant="outline" onClick={() => setIsAddChargeOpen(false)}>
