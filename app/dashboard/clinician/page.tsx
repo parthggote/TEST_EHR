@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -94,7 +94,6 @@ export default function ClinicianDashboardPage() {
   const [progress, setProgress] = useState<string | null>(null)
   const [manifest, setManifest] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const hasFetchedForManifest = useRef(false)
 
   // State for the fetched data
   const [patients, setPatients] = useState<{ data: Patient[]; source: string | null }>({ data: [], source: null })
@@ -113,7 +112,6 @@ export default function ClinicianDashboardPage() {
     setImportStatus('starting')
     setError(null)
     setManifest(null)
-    hasFetchedForManifest.current = false
     // Reset all data states
     setPatients({ data: [], source: null })
     setAppointments({ data: [], source: null })
@@ -127,9 +125,6 @@ export default function ClinicianDashboardPage() {
     setDocumentReferences({ data: [], source: null })
     setProcedures({ data: [], source: null })
     try {
-      // Clear the cache first
-      await fetch('/api/clinician/bulk-data/clear-cache', { method: 'POST' })
-
       const response = await fetch('/api/clinician/bulk-data/start', {
         method: 'POST',
       })
@@ -148,58 +143,53 @@ export default function ClinicianDashboardPage() {
 
   // Effect to automatically fetch all data when manifest is received
   useEffect(() => {
-    const fetchAllData = async () => {
-      // This effect should only run once per manifest
-      if (!manifest || hasFetchedForManifest.current) {
-        return
-      }
-      hasFetchedForManifest.current = true
-      setImportStatus('fetching')
-      setError(null)
+    if (importStatus === 'complete' && manifest) {
+      const fetchAllData = async () => {
+        setImportStatus('fetching')
+        setError(null)
 
-      const promises = manifest.output.map((resource: any) => {
-        return fetch('/api/clinician/bulk-data/fetch-file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileUrl: resource.url,
-            resourceType: resource.type,
-          }),
-        }).then((res) => {
-          if (!res.ok) {
-            console.error(`Failed to fetch ${resource.type}`)
-            return null
+        const promises = manifest.output.map((resource: any) => {
+          return fetch('/api/clinician/bulk-data/fetch-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileUrl: resource.url }),
+          })
+          .then(res => {
+            if (!res.ok) {
+              console.error(`Failed to fetch ${resource.type}`)
+              return null; // Return null on failure to not break Promise.all
+            }
+            return res.json().then(result => ({ type: resource.type, ...result }));
+          })
+        });
+
+        const results = await Promise.all(promises);
+
+        results.forEach(result => {
+          if (!result) return; // Skip failed requests
+          const { type, data, source } = result;
+          switch (type) {
+            case 'Patient': setPatients({ data, source }); break;
+            case 'Appointment': setAppointments({ data, source }); break;
+            case 'Condition': setConditions({ data, source }); break;
+            case 'MedicationRequest': setMedications({ data, source }); break;
+            case 'AllergyIntolerance': setAllergies({ data, source }); break;
+            case 'Practitioner': setPractitioners({ data, source }); break;
+            case 'DiagnosticReport': setDiagnosticReports({ data, source }); break;
+            case 'Immunization': setImmunizations({ data, source }); break;
+            case 'Observation': setObservations({ data, source }); break;
+            case 'DocumentReference': setDocumentReferences({ data, source }); break;
+            case 'Procedure': setProcedures({ data, source }); break;
+            default: break;
           }
-          return res.json().then((result) => ({ type: resource.type, ...result }))
-        })
-      })
+        });
 
-      const results = await Promise.all(promises)
+        setImportStatus('complete'); // Or a new status like 'displayed'
+      };
 
-      results.forEach((result) => {
-        if (!result) return
-        const { type, data, source } = result
-        switch (type) {
-          case 'Patient': setPatients({ data, source }); break;
-          case 'Appointment': setAppointments({ data, source }); break;
-          case 'Condition': setConditions({ data, source }); break;
-          case 'MedicationRequest': setMedications({ data, source }); break;
-          case 'AllergyIntolerance': setAllergies({ data, source }); break;
-          case 'Practitioner': setPractitioners({ data, source }); break;
-          case 'DiagnosticReport': setDiagnosticReports({ data, source }); break;
-          case 'Immunization': setImmunizations({ data, source }); break;
-          case 'Observation': setObservations({ data, source }); break;
-          case 'DocumentReference': setDocumentReferences({ data, source }); break;
-          case 'Procedure': setProcedures({ data, source }); break;
-          default: break;
-        }
-      })
-
-      setImportStatus('complete')
+      fetchAllData();
     }
-
-    fetchAllData()
-  }, [manifest])
+  }, [manifest, importStatus]);
 
   // Effect for polling status
   useEffect(() => {

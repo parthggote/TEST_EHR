@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import Link from 'next/link'
 import {
   Table,
   TableBody,
@@ -54,12 +53,8 @@ export function PatientTable({ patients }: PatientTableProps) {
           </TableHeader>
           <TableBody>
             {patients.data.map((item) => (
-              <TableRow key={(item as any)._id}>
-                <TableCell>
-                  <Link href={`/dashboard/clinician/patients/${(item as any)._id}`} className="text-primary hover:underline">
-                    {item.name?.[0]?.text || 'N/A'}
-                  </Link>
-                </TableCell>
+              <TableRow key={item.id}>
+                <TableCell>{item.name?.[0]?.text || 'N/A'}</TableCell>
                 <TableCell>{item.gender || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.birthDate)}</TableCell>
               </TableRow>
