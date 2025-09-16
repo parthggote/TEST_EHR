@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Search, Plus, Eye, Pencil, Trash2, Loader2 } from "lucide-react"
 import { Patient } from "@/lib/types/fhir";
-import { useToast } from "@/hooks/use-toast";
 
 // Helper to get a patient's full name from the FHIR resource
 function getPatientName(patient: Patient): string {
@@ -23,7 +24,7 @@ function getPatientName(patient: Patient): string {
 }
 
 export default function ClinicianPatientsPage() {
-  const [searchParams, setSearchParams] = useState({ family: "", given: "" });
+  const [searchParams, setSearchParams] = useState({ identifier: "", family: "", given: "" });
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,19 +37,25 @@ export default function ClinicianPatientsPage() {
     setPatients([]);
 
     const query = new URLSearchParams({
+      identifier: searchParams.identifier,
       family: searchParams.family,
       given: searchParams.given,
     }).toString();
 
     try {
       const response = await fetch(`/api/clinician/patients?${query}`);
+
+      // The response from the FHIR server will be proxied through our API.
+      // We need to check the status here and get the detailed error if it's not ok.
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to fetch patients');
+        // The 'details' field from our backend contains the actual error from the FHIR server
+        throw new Error(errorData.details || `Request failed with status ${response.status}`);
       }
+
       const data = await response.json();
-      // The result from a search is a Bundle resource
       setPatients(data.entry?.map((entry: any) => entry.resource) || []);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
@@ -77,14 +84,22 @@ export default function ClinicianPatientsPage() {
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Input
-                  placeholder="Family Name..."
+                  placeholder="Patient Identifier (MRN, SSN)..."
+                  value={searchParams.identifier}
+                  onChange={(e) => setSearchParams({ ...searchParams, identifier: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="relative flex-1">
+                <Input
+                  placeholder="Family Name (Optional)..."
                   value={searchParams.family}
                   onChange={(e) => setSearchParams({ ...searchParams, family: e.target.value })}
                 />
               </div>
               <div className="relative flex-1">
                 <Input
-                  placeholder="Given Name..."
+                  placeholder="Given Name (Optional)..."
                   value={searchParams.given}
                   onChange={(e) => setSearchParams({ ...searchParams, given: e.target.value })}
                 />
@@ -103,7 +118,15 @@ export default function ClinicianPatientsPage() {
             <CardTitle>Search Results ({patients.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {error && <p className="text-red-500">{error}</p>}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error Fetching Patients</AlertTitle>
+                <AlertDescription>
+                  <pre className="whitespace-pre-wrap font-mono text-xs">{error}</pre>
+                </AlertDescription>
+              </Alert>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
