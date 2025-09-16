@@ -148,58 +148,58 @@ export default function ClinicianDashboardPage() {
 
   // Effect to automatically fetch all data when manifest is received
   useEffect(() => {
-    // This effect should only run once per manifest
-    if (!manifest || hasFetchedForManifest.current) {
-      return
-    }
-
     const fetchAllData = async () => {
+      // This effect should only run once per manifest
+      if (!manifest || hasFetchedForManifest.current) {
+        return
+      }
       hasFetchedForManifest.current = true
       setImportStatus('fetching')
       setError(null)
 
       const promises = manifest.output.map((resource: any) => {
-          return fetch('/api/clinician/bulk-data/fetch-file', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileUrl: resource.url, resourceType: resource.type }),
-          })
-          .then(res => {
-            if (!res.ok) {
-              console.error(`Failed to fetch ${resource.type}`)
-              return null; // Return null on failure to not break Promise.all
-            }
-            return res.json().then(result => ({ type: resource.type, ...result }));
-          })
-        });
-
-        const results = await Promise.all(promises);
-
-        results.forEach(result => {
-          if (!result) return; // Skip failed requests
-          const { type, data, source } = result;
-          switch (type) {
-            case 'Patient': setPatients({ data, source }); break;
-            case 'Appointment': setAppointments({ data, source }); break;
-            case 'Condition': setConditions({ data, source }); break;
-            case 'MedicationRequest': setMedications({ data, source }); break;
-            case 'AllergyIntolerance': setAllergies({ data, source }); break;
-            case 'Practitioner': setPractitioners({ data, source }); break;
-            case 'DiagnosticReport': setDiagnosticReports({ data, source }); break;
-            case 'Immunization': setImmunizations({ data, source }); break;
-            case 'Observation': setObservations({ data, source }); break;
-            case 'DocumentReference': setDocumentReferences({ data, source }); break;
-            case 'Procedure': setProcedures({ data, source }); break;
-            default: break;
+        return fetch('/api/clinician/bulk-data/fetch-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileUrl: resource.url,
+            resourceType: resource.type,
+          }),
+        }).then((res) => {
+          if (!res.ok) {
+            console.error(`Failed to fetch ${resource.type}`)
+            return null
           }
-        });
+          return res.json().then((result) => ({ type: resource.type, ...result }))
+        })
+      })
 
-        setImportStatus('complete'); // Or a new status like 'displayed'
-      };
+      const results = await Promise.all(promises)
 
-      fetchAllData();
+      results.forEach((result) => {
+        if (!result) return
+        const { type, data, source } = result
+        switch (type) {
+          case 'Patient': setPatients({ data, source }); break;
+          case 'Appointment': setAppointments({ data, source }); break;
+          case 'Condition': setConditions({ data, source }); break;
+          case 'MedicationRequest': setMedications({ data, source }); break;
+          case 'AllergyIntolerance': setAllergies({ data, source }); break;
+          case 'Practitioner': setPractitioners({ data, source }); break;
+          case 'DiagnosticReport': setDiagnosticReports({ data, source }); break;
+          case 'Immunization': setImmunizations({ data, source }); break;
+          case 'Observation': setObservations({ data, source }); break;
+          case 'DocumentReference': setDocumentReferences({ data, source }); break;
+          case 'Procedure': setProcedures({ data, source }); break;
+          default: break;
+        }
+      })
+
+      setImportStatus('complete')
     }
-  }, [manifest]);
+
+    fetchAllData()
+  }, [manifest])
 
   // Effect for polling status
   useEffect(() => {
