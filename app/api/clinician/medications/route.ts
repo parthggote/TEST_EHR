@@ -20,6 +20,31 @@ function getAccessToken(): string | null {
   }
 }
 
+export async function GET(request: NextRequest) {
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const patientId = searchParams.get('patient');
+    const epicClient = new EpicFHIRClient('clinician');
+
+    if (patientId) {
+      const medications = await epicClient.getPatientMedications(accessToken, patientId);
+      return NextResponse.json(medications);
+    } else {
+      // Fetch all medication requests for the clinician's context
+      const medications = await epicClient.makeRequest(`MedicationRequest?_count=10`, accessToken);
+      return NextResponse.json(medications);
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to search medications', details: errorMessage }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   const accessToken = getAccessToken();
   if (!accessToken) {
