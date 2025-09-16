@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -15,16 +16,21 @@ interface AllergyIntolerance {
 }
 
 interface AllergyTableProps {
-  allergies: AllergyIntolerance[]
+  allergies: { data: AllergyIntolerance[]; source: string | null }
 }
 
 export function AllergyTable({ allergies }: AllergyTableProps) {
-  if (allergies.length === 0) return null
+  if (allergies.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Allergies</CardTitle>
+        {allergies.source && (
+          <Badge variant={allergies.source === 'cache' ? 'secondary' : 'default'}>
+            {allergies.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -35,10 +41,10 @@ export function AllergyTable({ allergies }: AllergyTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {allergies.map((item) => (
+            {allergies.data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.code.text}</TableCell>
-                <TableCell>{item.patient.display}</TableCell>
+                <TableCell>{item.code?.text || 'N/A'}</TableCell>
+                <TableCell>{item.patient?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

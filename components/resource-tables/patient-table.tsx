@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -16,7 +17,7 @@ interface Patient {
 }
 
 interface PatientTableProps {
-  patients: Patient[]
+  patients: { data: Patient[]; source: string | null }
 }
 
 const formatDate = (dateString?: string): string => {
@@ -29,12 +30,17 @@ const formatDate = (dateString?: string): string => {
 }
 
 export function PatientTable({ patients }: PatientTableProps) {
-  if (patients.length === 0) return null
+  if (patients.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Patients</CardTitle>
+        {patients.source && (
+          <Badge variant={patients.source === 'cache' ? 'secondary' : 'default'}>
+            {patients.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -46,10 +52,10 @@ export function PatientTable({ patients }: PatientTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {patients.map((item) => (
+            {patients.data.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name?.[0]?.text || 'N/A'}</TableCell>
-                <TableCell>{item.gender}</TableCell>
+                <TableCell>{item.gender || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.birthDate)}</TableCell>
               </TableRow>
             ))}

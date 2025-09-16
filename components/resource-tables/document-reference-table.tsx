@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -16,7 +17,7 @@ interface DocumentReference {
 }
 
 interface DocumentReferenceTableProps {
-  documents: DocumentReference[]
+  documents: { data: DocumentReference[]; source: string | null }
 }
 
 const formatDate = (dateString?: string): string => {
@@ -29,12 +30,17 @@ const formatDate = (dateString?: string): string => {
 }
 
 export function DocumentReferenceTable({ documents }: DocumentReferenceTableProps) {
-  if (documents.length === 0) return null
+  if (documents.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Document References</CardTitle>
+        {documents.source && (
+          <Badge variant={documents.source === 'cache' ? 'secondary' : 'default'}>
+            {documents.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -46,10 +52,10 @@ export function DocumentReferenceTable({ documents }: DocumentReferenceTableProp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {documents.map((item) => (
+            {documents.data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>{item.description || 'N/A'}</TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.date)}</TableCell>
               </TableRow>
             ))}

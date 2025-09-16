@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -16,7 +17,7 @@ interface Immunization {
 }
 
 interface ImmunizationTableProps {
-  immunizations: Immunization[]
+  immunizations: { data: Immunization[]; source: string | null }
 }
 
 const formatDate = (dateString?: string): string => {
@@ -29,12 +30,17 @@ const formatDate = (dateString?: string): string => {
 }
 
 export function ImmunizationTable({ immunizations }: ImmunizationTableProps) {
-  if (immunizations.length === 0) return null
+  if (immunizations.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Immunizations</CardTitle>
+        {immunizations.source && (
+          <Badge variant={immunizations.source === 'cache' ? 'secondary' : 'default'}>
+            {immunizations.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -46,10 +52,10 @@ export function ImmunizationTable({ immunizations }: ImmunizationTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {immunizations.map((item) => (
+            {immunizations.data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.vaccineCode.text}</TableCell>
-                <TableCell>{item.patient.display}</TableCell>
+                <TableCell>{item.vaccineCode?.text || 'N/A'}</TableCell>
+                <TableCell>{item.patient?.display || 'N/A'}</TableCell>
                 <TableCell>{formatDate(item.occurrenceDateTime)}</TableCell>
               </TableRow>
             ))}

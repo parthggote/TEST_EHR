@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -16,7 +17,7 @@ interface Appointment {
 }
 
 interface AppointmentTableProps {
-  appointments: Appointment[]
+  appointments: { data: Appointment[]; source: string | null }
 }
 
 const formatDate = (dateString?: string): string => {
@@ -29,12 +30,17 @@ const formatDate = (dateString?: string): string => {
 }
 
 export function AppointmentTable({ appointments }: AppointmentTableProps) {
-  if (appointments.length === 0) return null
+  if (appointments.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Appointments</CardTitle>
+        {appointments.source && (
+          <Badge variant={appointments.source === 'cache' ? 'secondary' : 'default'}>
+            {appointments.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -46,10 +52,12 @@ export function AppointmentTable({ appointments }: AppointmentTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {appointments.map((item) => (
+            {appointments.data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>{item.participant?.[0]?.actor.display}</TableCell>
+                <TableCell>{item.description || 'N/A'}</TableCell>
+                <TableCell>
+                  {item.participant?.[0]?.actor?.display || 'N/A'}
+                </TableCell>
                 <TableCell>{formatDate(item.start)}</TableCell>
               </TableRow>
             ))}

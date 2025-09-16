@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const cachedData = await cacheCollection.findOne({ fileUrl })
     if (cachedData) {
       console.log(`CACHE HIT: Returning data for ${fileUrl} from cache.`)
-      return NextResponse.json(cachedData.data)
+      return NextResponse.json({ data: cachedData.data, source: 'cache' })
     }
 
     console.log(`CACHE MISS: Data for ${fileUrl} not found. Fetching from API.`)
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     })
     console.log(`CACHE POPULATE: Stored data for ${fileUrl}.`)
 
-    return NextResponse.json(data)
+    return NextResponse.json({ data, source: 'api' })
   } catch (error) {
     console.error('Failed to fetch or parse bulk data file:', error)
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'

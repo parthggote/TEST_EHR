@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -16,16 +17,21 @@ interface DiagnosticReport {
 }
 
 interface DiagnosticReportTableProps {
-  reports: DiagnosticReport[]
+  reports: { data: DiagnosticReport[]; source: string | null }
 }
 
 export function DiagnosticReportTable({ reports }: DiagnosticReportTableProps) {
-  if (reports.length === 0) return null
+  if (reports.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Diagnostic Reports</CardTitle>
+        {reports.source && (
+          <Badge variant={reports.source === 'cache' ? 'secondary' : 'default'}>
+            {reports.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -37,11 +43,11 @@ export function DiagnosticReportTable({ reports }: DiagnosticReportTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reports.map((item) => (
+            {reports.data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.code.text}</TableCell>
-                <TableCell>{item.conclusion}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>{item.code?.text || 'N/A'}</TableCell>
+                <TableCell>{item.conclusion || 'N/A'}</TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

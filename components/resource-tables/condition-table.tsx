@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -15,16 +16,21 @@ interface Condition {
 }
 
 interface ConditionTableProps {
-  conditions: Condition[]
+  conditions: { data: Condition[]; source: string | null }
 }
 
 export function ConditionTable({ conditions }: ConditionTableProps) {
-  if (conditions.length === 0) return null
+  if (conditions.data.length === 0) return null
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Conditions</CardTitle>
+        {conditions.source && (
+          <Badge variant={conditions.source === 'cache' ? 'secondary' : 'default'}>
+            {conditions.source === 'cache' ? 'From Cache' : 'Live'}
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -35,10 +41,10 @@ export function ConditionTable({ conditions }: ConditionTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {conditions.map((item) => (
+            {conditions.data.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.code.text}</TableCell>
-                <TableCell>{item.subject.display}</TableCell>
+                <TableCell>{item.code?.text || 'N/A'}</TableCell>
+                <TableCell>{item.subject?.display || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
