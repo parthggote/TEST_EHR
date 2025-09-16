@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { EpicFHIRClient } from '@/lib/epic-client';
 import CryptoJS from 'crypto-js';
+import { connectToDatabase } from '@/lib/mongodb';
 
 // Helper function to get and decrypt the access token
 function getAccessToken(): string | null {
@@ -38,6 +39,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Patient ID is required for searching appointments' }, { status: 400 });
     }
 
+    const { db } = await connectToDatabase();
+    const cachedAppointments = await db.collection('data').find({
+      resourceType: 'Appointment',
+      'participant.actor.reference': `Patient/${patientId}`
+    }).toArray();
+
+    if (cachedAppointments.length > 0) {
+      console.log(`CACHE HIT: Found ${cachedAppointments.length} appointments for patient ${patientId} in cache.`);
+      const appointmentsBundle = {
+        resourceType: 'Bundle',
+        type: 'searchset',
+        total: cachedAppointments.length,
+        entry: cachedAppointments.map(appt => ({ resource: appt })),
+      };
+      return NextResponse.json(appointmentsBundle);
+    }
+
+    console.log(`CACHE MISS: Appointments for patient ${patientId} not found. Fetching from API.`);
     const searchOptions = {
       date: searchParams.get('date') || undefined,
       status: searchParams.get('status') || undefined,
@@ -45,6 +64,12 @@ export async function GET(request: NextRequest) {
 
     const epicClient = new EpicFHIRClient('clinician');
     const appointments = await epicClient.getPatientAppointments(accessToken, patientId, searchOptions);
+
+    if (appointments.entry && appointments.entry.length > 0) {
+      const appointmentsToCache = appointments.entry.map((entry: any) => entry.resource);
+      await db.collection('data').insertMany(appointmentsToCache);
+      console.log(`CACHE POPULATE: Stored ${appointmentsToCache.length} appointments for patient ${patientId}.`);
+    }
 
     return NextResponse.json(appointments);
   } catch (error) {
@@ -68,6 +93,11 @@ export async function POST(request: NextRequest) {
 
     const epicClient = new EpicFHIRClient('clinician');
     const newAppointment = await epicClient.createAppointment(accessToken, appointmentData);
+
+    // Add to cache
+    const { db } = await connectToDatabase();
+    await db.collection('data').insertOne(newAppointment);
+    console.log(`CACHE ADD: Added new appointment ${newAppointment.id} to cache.`);
 
     return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {

@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { EpicFHIRClient } from '@/lib/epic-client';
 import CryptoJS from 'crypto-js';
 import { Patient } from '@/lib/types/fhir';
+import { connectToDatabase } from '@/lib/mongodb';
 
 // Helper function to get and decrypt the access token
 function getAccessToken(): string | null {
@@ -49,8 +50,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
+    const { db } = await connectToDatabase();
+    const cachedPatient = await db.collection('data').findOne({ id: patientId, resourceType: 'Patient' });
+
+    if (cachedPatient) {
+      console.log(`CACHE HIT: Found patient ${patientId} in cache.`);
+      // The _id field is added by MongoDB, remove it before sending to the client
+      const { _id, ...patient } = cachedPatient;
+      return NextResponse.json(patient);
+    }
+
+    console.log(`CACHE MISS: Patient ${patientId} not found in cache. Fetching from API.`);
     const epicClient = new EpicFHIRClient('clinician');
     const patient = await epicClient.getPatient(accessToken, patientId);
+
+    // Store in cache for future requests
+    await db.collection('data').insertOne({ ...patient, id: patientId });
+
     return NextResponse.json(patient);
   } catch (error) {
     console.error(`Failed to fetch patient ${patientId}:`, error);
@@ -74,13 +90,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const patientData: Patient = await request.json();
 
-    // Ensure the ID in the body matches the ID in the URL
     if (patientData.id !== patientId) {
       return NextResponse.json({ error: 'Patient ID in URL and body do not match' }, { status: 400 });
     }
 
     const epicClient = new EpicFHIRClient('clinician');
     const updatedPatient = await epicClient.updatePatient(accessToken, patientData);
+
+    // Update cache
+    const { db } = await connectToDatabase();
+    await db.collection('data').updateOne({ id: patientId, resourceType: 'Patient' }, { $set: updatedPatient }, { upsert: true });
+    console.log(`CACHE UPDATE: Updated patient ${patientId} in cache.`);
 
     return NextResponse.json(updatedPatient);
   } catch (error) {
@@ -106,7 +126,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const epicClient = new EpicFHIRClient('clinician');
     await epicClient.deletePatient(accessToken, patientId);
 
-    return new NextResponse(null, { status: 204 }); // 204 No Content for successful deletion
+    // Invalidate cache
+    const { db } = await connectToDatabase();
+    await db.collection('data').deleteOne({ id: patientId, resourceType: 'Patient' });
+    console.log(`CACHE INVALIDATE: Deleted patient ${patientId} from cache.`);
+
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error(`Failed to delete patient ${patientId}:`, error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
