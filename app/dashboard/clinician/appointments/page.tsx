@@ -6,14 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Appointment } from "@/lib/types/fhir";
+import { AppointmentForm } from "@/components/appointment-form";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export default function ClinicianAppointmentsPage() {
   const [patientId, setPatientId] = useState("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // State for modals
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,6 +49,74 @@ export default function ClinicianAppointmentsPage() {
     }
   };
 
+  const handleBookAppointment = async (appointmentData: Partial<Appointment>) => {
+    try {
+      const response = await fetch('/api/clinician/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointmentData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to book appointment');
+      }
+
+      setIsBookingModalOpen(false);
+      setNotification({ type: 'success', message: 'Appointment booked successfully!' });
+      // Refresh appointments list
+      handleSearch(new Event('submit') as unknown as FormEvent);
+    } catch (err) {
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred' });
+    }
+  };
+
+  const handleEditAppointment = async (appointmentData: Partial<Appointment>) => {
+    if (!editingAppointment?.id) return;
+
+    try {
+      const response = await fetch(`/api/clinician/appointments/${editingAppointment.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointmentData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to update appointment');
+      }
+
+      setEditingAppointment(null);
+      setNotification({ type: 'success', message: 'Appointment updated successfully!' });
+      // Refresh appointments list
+      handleSearch(new Event('submit') as unknown as FormEvent);
+    } catch (err) {
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred' });
+    }
+  };
+
+  const handleDeleteAppointment = async () => {
+    if (!deletingAppointment?.id) return;
+
+    try {
+      const response = await fetch(`/api/clinician/appointments/${deletingAppointment.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to delete appointment');
+      }
+
+      setDeletingAppointment(null);
+      setNotification({ type: 'success', message: 'Appointment deleted successfully!' });
+      // Refresh appointments list
+      handleSearch(new Event('submit') as unknown as FormEvent);
+    } catch (err) {
+      setNotification({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred' });
+    }
+  };
+
   return (
     <DashboardLayout userType="clinician">
       <div className="space-y-6">
@@ -48,11 +125,49 @@ export default function ClinicianAppointmentsPage() {
             <h1 className="text-3xl font-bold text-foreground">Appointment Management</h1>
             <p className="text-muted-foreground">Search and manage patient appointments.</p>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled>
+          <Button
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+            onClick={() => setIsBookingModalOpen(true)}
+            disabled={!patientId || isLoading}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Book Appointment
           </Button>
         </div>
+
+        {notification && (
+          <div className={`p-4 rounded-md ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {notification.message}
+            <button onClick={() => setNotification(null)} className="float-right font-bold">X</button>
+          </div>
+        )}
+
+        {isBookingModalOpen && (
+          <AppointmentForm
+            isOpen={isBookingModalOpen}
+            onClose={() => setIsBookingModalOpen(false)}
+            onSubmit={handleBookAppointment}
+            patientId={patientId}
+          />
+        )}
+
+        {editingAppointment && (
+          <AppointmentForm
+            isOpen={!!editingAppointment}
+            onClose={() => setEditingAppointment(null)}
+            onSubmit={handleEditAppointment}
+            patientId={patientId}
+            appointment={editingAppointment}
+          />
+        )}
+
+        <ConfirmationDialog
+          isOpen={!!deletingAppointment}
+          onClose={() => setDeletingAppointment(null)}
+          onConfirm={handleDeleteAppointment}
+          title="Are you sure you want to delete this appointment?"
+          description="This action cannot be undone."
+        />
 
         <Card>
           <CardContent className="p-6">
@@ -105,10 +220,10 @@ export default function ClinicianAppointmentsPage() {
                       <TableCell>{new Date(appt.start).toLocaleString()}</TableCell>
                       <TableCell>{new Date(appt.end).toLocaleString()}</TableCell>
                       <TableCell className="space-x-2">
-                        <Button variant="ghost" size="sm" disabled>
+                        <Button variant="ghost" size="sm" onClick={() => setEditingAppointment(appt)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" disabled>
+                        <Button variant="ghost" size="sm" onClick={() => setDeletingAppointment(appt)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </TableCell>
