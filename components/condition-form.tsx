@@ -81,12 +81,12 @@ export function ConditionForm({ isOpen, onClose, onSubmit, patientId, condition 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="code">Condition Description</Label>
-            <Input id="code" value={codeText} onChange={(e) => setCodeText(e.target.value)} required />
+            <Input id="code" name="code" value={codeText} onChange={(e) => setCodeText(e.target.value)} required />
           </div>
           <div>
             <Label htmlFor="clinicalStatus">Clinical Status</Label>
             <Select onValueChange={setClinicalStatus} value={clinicalStatus} required>
-              <SelectTrigger id="clinicalStatus">
+              <SelectTrigger id="clinicalStatus" name="clinicalStatus">
                 <SelectValue placeholder="Select a status" />
               </SelectTrigger>
               <SelectContent>
@@ -99,7 +99,7 @@ export function ConditionForm({ isOpen, onClose, onSubmit, patientId, condition 
           <div>
             <Label htmlFor="verificationStatus">Verification Status</Label>
             <Select onValueChange={setVerificationStatus} value={verificationStatus} required>
-              <SelectTrigger id="verificationStatus">
+              <SelectTrigger id="verificationStatus" name="verificationStatus">
                 <SelectValue placeholder="Select a status" />
               </SelectTrigger>
               <SelectContent>
