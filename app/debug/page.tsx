@@ -45,11 +45,11 @@ export default function DebugPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background text-foreground py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Epic FHIR Debug Console</h1>
-          <p className="text-gray-600 mt-2">Troubleshoot your Epic integration configuration</p>
+          <h1 className="text-3xl font-bold text-foreground">Epic FHIR Debug Console</h1>
+          <p className="text-muted-foreground mt-2">Troubleshoot your Epic integration configuration</p>
         </div>
 
         <div className="grid gap-6">
@@ -63,7 +63,7 @@ export default function DebugPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
                   <span className="font-medium">Client ID</span>
                   <div className="flex items-center gap-2">
                     {config?.clientId ? (
@@ -77,7 +77,7 @@ export default function DebugPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
                   <span className="font-medium">Redirect URI</span>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="max-w-48 truncate">
@@ -91,14 +91,14 @@ export default function DebugPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
                   <span className="font-medium">Mock Data Mode</span>
                   <Badge variant={config?.useMockData ? "secondary" : "default"}>
                     {config?.useMockData ? 'Enabled' : 'Disabled'}
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
                   <span className="font-medium">Encryption Key</span>
                   <div className="flex items-center gap-2">
                     {config?.hasEncryptionKey ? (
@@ -122,7 +122,7 @@ export default function DebugPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 bg-gray-100 rounded-lg font-mono text-sm break-all">
+                <div className="p-4 bg-muted rounded-lg font-mono text-sm break-all">
                   {authUrl}
                 </div>
                 <div className="flex gap-2">
