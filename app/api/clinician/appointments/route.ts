@@ -35,12 +35,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patient');
 
-    const epicClient = new EpicFHIRClient('clinician');
-
     if (!patientId) {
-      // If no patient ID, fetch all appointments for the clinician's context
-      const appointments = await epicClient.makeRequest(`Appointment?_count=10`, accessToken);
-      return NextResponse.json(appointments);
+      return NextResponse.json({ error: 'Patient ID is required for searching appointments' }, { status: 400 });
     }
 
     const { db } = await connectToDatabase();
@@ -66,6 +62,7 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status') || undefined,
     };
 
+    const epicClient = new EpicFHIRClient('clinician');
     const appointments = await epicClient.getPatientAppointments(accessToken, patientId, searchOptions);
 
     if (appointments.entry && appointments.entry.length > 0) {

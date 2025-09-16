@@ -31,12 +31,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patient');
 
-    const epicClient = new EpicFHIRClient('clinician');
-
     if (!patientId) {
-      // If no patient ID, fetch all conditions for the clinician's context
-      const conditions = await epicClient.makeRequest(`Condition?_count=10`, accessToken);
-      return NextResponse.json(conditions);
+      return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
     }
 
     const { db } = await connectToDatabase();
@@ -56,6 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`CACHE MISS: Conditions for patient ${patientId} not found. Fetching from API.`);
+    const epicClient = new EpicFHIRClient('clinician');
     const conditions = await epicClient.getPatientConditions(accessToken, patientId);
 
     if (conditions.entry && conditions.entry.length > 0) {
