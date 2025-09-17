@@ -21,10 +21,14 @@ export default function ClinicianBillingPage() {
   const { toast } = useToast();
 
   const fetchBillingData = async (patientId = "") => {
+    if (!patientId) {
+      toast({ title: "Error", description: "Please enter a Patient ID to search.", variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      const query = patientId ? `?patient=${patientId}` : "";
+      const query = `?patient=${patientId}`;
       const response = await fetch(`/api/clinician/billing${query}`);
       if (!response.ok) {
         const errorData = await response.json();
@@ -38,11 +42,6 @@ export default function ClinicianBillingPage() {
       setIsLoading(false);
     }
   };
-
-  // Fetch all transactions on initial load
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
