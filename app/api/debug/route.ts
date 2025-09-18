@@ -65,6 +65,7 @@ export async function GET() {
         clientId: patientConfig.clientId,
         redirectUri: patientConfig.redirectUri,
         useMockData: patientConfig.useMockData,
+        hasEncryptionKey: !!patientConfig.encryptionKey && patientConfig.encryptionKey.length >= 32,
       },
       clinicianConfig: {
         clientId: clinicianConfig.clientId,

@@ -136,7 +136,7 @@ export default function BillingPage() {
                   <div className="space-y-2">
                     <Label htmlFor="patient">Patient</Label>
                     <Select>
-                      <SelectTrigger id="insurance-patient" name="insurance-patient">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       <SelectContent>
@@ -150,7 +150,7 @@ export default function BillingPage() {
                   <div className="space-y-2">
                     <Label htmlFor="payer">Insurance Payer</Label>
                     <Select>
-                      <SelectTrigger id="insurance-payer" name="insurance-payer">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select payer" />
                       </SelectTrigger>
                       <SelectContent>
@@ -187,7 +187,7 @@ export default function BillingPage() {
                   <div className="space-y-2">
                     <Label htmlFor="patient">Patient</Label>
                     <Select>
-                      <SelectTrigger id="charge-patient" name="charge-patient">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       <SelectContent>
@@ -201,20 +201,20 @@ export default function BillingPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="code">Procedure Code</Label>
-                      <Input id="code" name="code" placeholder="e.g., 99213" />
+                      <Input placeholder="e.g., 99213" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="amount">Amount</Label>
-                      <Input id="amount" name="amount" type="number" placeholder="0.00" />
+                      <Input type="number" placeholder="0.00" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
-                    <Input id="description" name="description" placeholder="Service description" />
+                    <Input placeholder="Service description" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="charge-service-date">Service Date</Label>
-                    <Input id="charge-service-date" name="charge-service-date" type="date" defaultValue="2024-01-15" />
+                    <Label htmlFor="date">Service Date</Label>
+                    <Input type="date" defaultValue="2024-01-15" />
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
                     <Button variant="outline" onClick={() => setIsAddChargeOpen(false)}>
@@ -286,10 +286,10 @@ export default function BillingPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="transaction-search" name="transaction-search" placeholder="Search transactions..." className="pl-10" />
+                    <Input placeholder="Search transactions..." className="pl-10" />
                   </div>
                   <Select>
-                    <SelectTrigger id="status-filter" name="status-filter" className="w-full sm:w-48">
+                    <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>

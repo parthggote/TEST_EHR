@@ -47,7 +47,6 @@ const clinicianNavigation = [
   { name: "Patient Management", href: "/dashboard/clinician/patients", icon: Users },
   { name: "Appointments", href: "/dashboard/clinician/appointments", icon: Calendar },
   { name: "Conditions", href: "/dashboard/clinician/conditions", icon: Activity },
-  { name: "Billing", href: "/dashboard/clinician/billing", icon: CreditCard },
   { name: "Bulk Data Export", href: "/dashboard/clinician/bulk-data", icon: Download },
 ]
 
