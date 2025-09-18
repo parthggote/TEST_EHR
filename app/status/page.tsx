@@ -38,20 +38,24 @@ export default function StatusPage() {
   const checkStatus = async () => {
     setLoading(true);
     try {
-      // Check session status
-      const sessionResponse = await fetch('/api/auth/session');
-      const sessionData = sessionResponse.ok ? await sessionResponse.json() : { authenticated: false };
+      const response = await fetch('/api/debug');
+      if (!response.ok) {
+        throw new Error('Failed to fetch status from debug API.');
+      }
+      const data = await response.json();
 
-      // Check configuration (this would need to be implemented)
+      const session = data.session;
+      const patientConfig = data.patientConfig;
+
       const configStatus: ConfigStatus = {
-        useMockData: !process.env.CLIENT_ID || process.env.USE_MOCK_DATA === 'true',
-        hasClientId: !!process.env.CLIENT_ID,
-        hasEncryptionKey: !!process.env.ENCRYPTION_KEY,
-        hasValidRedirectUri: !!process.env.REDIRECT_URI?.startsWith('http'),
-        isAuthenticated: sessionData.authenticated,
-        tokenExpiry: sessionData.expiresAt,
-        patientId: sessionData.patientId,
-        scopes: sessionData.scope
+        useMockData: patientConfig.useMockData,
+        hasClientId: !!patientConfig.clientId,
+        hasEncryptionKey: patientConfig.hasEncryptionKey,
+        hasValidRedirectUri: !!patientConfig.redirectUri,
+        isAuthenticated: !!session,
+        tokenExpiry: session?.expiresAt,
+        patientId: session?.type === 'Patient' ? session.patientId : undefined,
+        scopes: session?.scope
       };
 
       setStatus(configStatus);

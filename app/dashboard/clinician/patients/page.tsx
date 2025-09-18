@@ -84,8 +84,6 @@ export default function ClinicianPatientsPage() {
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Input
-                  id="identifier"
-                  name="identifier"
                   placeholder="Patient Identifier (MRN, SSN)..."
                   value={searchParams.identifier}
                   onChange={(e) => setSearchParams({ ...searchParams, identifier: e.target.value })}
@@ -94,8 +92,6 @@ export default function ClinicianPatientsPage() {
               </div>
               <div className="relative flex-1">
                 <Input
-                  id="family"
-                  name="family"
                   placeholder="Family Name (Optional)..."
                   value={searchParams.family}
                   onChange={(e) => setSearchParams({ ...searchParams, family: e.target.value })}
@@ -103,8 +99,6 @@ export default function ClinicianPatientsPage() {
               </div>
               <div className="relative flex-1">
                 <Input
-                  id="given"
-                  name="given"
                   placeholder="Given Name (Optional)..."
                   value={searchParams.given}
                   onChange={(e) => setSearchParams({ ...searchParams, given: e.target.value })}

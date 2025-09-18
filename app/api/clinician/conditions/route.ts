@@ -36,55 +36,32 @@ export async function GET(request: NextRequest) {
     }
 
     const { db } = await connectToDatabase();
-    const collection = db.collection('data');
+    const cachedConditions = await db.collection('data').find({
+      resourceType: 'Condition',
+      'subject.reference': `Patient/${patientId}`
+    }).toArray();
 
-    try {
-      // Fetch-first approach
-      console.log(`Fetching fresh conditions for patient ${patientId} from API.`);
-      const epicClient = new EpicFHIRClient('clinician');
-      const freshConditions = await epicClient.getPatientConditions(accessToken, patientId);
-
-      if (freshConditions.entry && freshConditions.entry.length > 0) {
-        const conditionsToCache = freshConditions.entry.map((e: any) => e.resource);
-
-        // Update cache: delete old and insert new
-        await collection.deleteMany({
-          resourceType: 'Condition',
-          'subject.reference': `Patient/${patientId}`
-        });
-        await collection.insertMany(conditionsToCache);
-        console.log(`CACHE REFRESH: Stored ${conditionsToCache.length} conditions for patient ${patientId}.`);
-      } else {
-         // If no conditions are returned, clear the cache for that patient
-         await collection.deleteMany({
-          resourceType: 'Condition',
-          'subject.reference': `Patient/${patientId}`
-        });
-      }
-
-      return NextResponse.json(freshConditions);
-
-    } catch (fetchError) {
-      console.warn(`API fetch failed for patient ${patientId}. Serving from cache as fallback. Error:`, fetchError);
-
-      const cachedConditions = await collection.find({
-        resourceType: 'Condition',
-        'subject.reference': `Patient/${patientId}`
-      }).toArray();
-
-      if (cachedConditions.length > 0) {
-        console.log(`CACHE FALLBACK: Found ${cachedConditions.length} conditions for patient ${patientId}.`);
-        return NextResponse.json({
-          resourceType: 'Bundle',
-          type: 'searchset',
-          total: cachedConditions.length,
-          entry: cachedConditions.map(c => ({ resource: c }))
-        });
-      }
-
-      // If fetch fails and cache is empty, re-throw the original error
-      throw fetchError;
+    if (cachedConditions.length > 0) {
+      console.log(`CACHE HIT: Found ${cachedConditions.length} conditions for patient ${patientId}.`);
+      return NextResponse.json({
+        resourceType: 'Bundle',
+        type: 'searchset',
+        total: cachedConditions.length,
+        entry: cachedConditions.map(c => ({ resource: c }))
+      });
     }
+
+    console.log(`CACHE MISS: Conditions for patient ${patientId} not found. Fetching from API.`);
+    const epicClient = new EpicFHIRClient('clinician');
+    const conditions = await epicClient.getPatientConditions(accessToken, patientId);
+
+    if (conditions.entry && conditions.entry.length > 0) {
+      const conditionsToCache = conditions.entry.map((e: any) => e.resource);
+      await db.collection('data').insertMany(conditionsToCache);
+      console.log(`CACHE POPULATE: Stored ${conditionsToCache.length} conditions for patient ${patientId}.`);
+    }
+
+    return NextResponse.json(conditions);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: 'Failed to search conditions', details: errorMessage }, { status: 500 });

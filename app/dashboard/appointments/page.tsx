@@ -144,7 +144,7 @@ export default function AppointmentsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="patient">Patient</Label>
                     <Select>
-                      <SelectTrigger id="patient" name="patient">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       <SelectContent>
@@ -158,7 +158,7 @@ export default function AppointmentsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="provider">Provider</Label>
                     <Select>
-                      <SelectTrigger id="provider" name="provider">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select provider" />
                       </SelectTrigger>
                       <SelectContent>
@@ -169,13 +169,13 @@ export default function AppointmentsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="appointment-date">Date</Label>
-                      <Input id="appointment-date" name="appointment-date" type="date" defaultValue="2024-01-15" />
+                      <Label htmlFor="date">Date</Label>
+                      <Input type="date" defaultValue="2024-01-15" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="time">Time</Label>
                       <Select>
-                        <SelectTrigger id="time" name="time">
+                        <SelectTrigger>
                           <SelectValue placeholder="Select time" />
                         </SelectTrigger>
                         <SelectContent>
@@ -191,7 +191,7 @@ export default function AppointmentsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="type">Appointment Type</Label>
                     <Select>
-                      <SelectTrigger id="type" name="type">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -205,7 +205,7 @@ export default function AppointmentsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="duration">Duration (minutes)</Label>
                     <Select>
-                      <SelectTrigger id="duration" name="duration">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select duration" />
                       </SelectTrigger>
                       <SelectContent>

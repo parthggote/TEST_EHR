@@ -69,15 +69,15 @@ export function AppointmentForm({ isOpen, onClose, onSubmit, patientId, appointm
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input id="description" name="description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+            <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} required />
           </div>
           <div>
             <Label htmlFor="start">Start Time</Label>
-            <Input id="start" name="start" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} required />
+            <Input id="start" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} required />
           </div>
           <div>
             <Label htmlFor="end">End Time</Label>
-            <Input id="end" name="end" type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} required />
+            <Input id="end" type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} required />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>

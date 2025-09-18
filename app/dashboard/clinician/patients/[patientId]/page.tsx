@@ -175,7 +175,6 @@ export default function PatientDetailPage() {
                   <Label htmlFor="given-name">Given Name</Label>
                   <Input
                     id="given-name"
-                    name="given-name"
                     value={patient.name?.[0]?.given?.join(' ') || ''}
                     onChange={(e) => {
                       const newPatient = { ...patient };
@@ -191,7 +190,6 @@ export default function PatientDetailPage() {
                   <Label htmlFor="family-name">Family Name</Label>
                   <Input
                     id="family-name"
-                    name="family-name"
                     value={patient.name?.[0]?.family || ''}
                     onChange={(e) => {
                       const newPatient = { ...patient };
@@ -207,7 +205,6 @@ export default function PatientDetailPage() {
                   <Label htmlFor="birthdate">Date of Birth</Label>
                   <Input
                     id="birthdate"
-                    name="birthdate"
                     type="date"
                     value={patient.birthDate || ''}
                     onChange={(e) => setPatient({ ...patient, birthDate: e.target.value } as Patient)}
@@ -221,7 +218,7 @@ export default function PatientDetailPage() {
                     onValueChange={(value) => setPatient({ ...patient, gender: value } as Patient)}
                     disabled={!isEditing}
                   >
-                    <SelectTrigger id="gender" name="gender">
+                    <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
