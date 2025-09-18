@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Users, Calendar, Activity, CreditCard, FileText, Settings } from "lucide-react"
+import { Users, Calendar, Activity, CreditCard, FileText, Settings, HeartPulse, Bug, User, BriefcaseMedical } from "lucide-react"
 
 export default function LandingPage() {
   return (
@@ -23,6 +23,7 @@ export default function LandingPage() {
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => window.location.href = '/status'}
               >
+                <HeartPulse className="w-4 h-4 mr-2" />
                 Status
               </Button>
               <Button 
@@ -30,12 +31,14 @@ export default function LandingPage() {
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => window.location.href = '/debug'}
               >
+                <Bug className="w-4 h-4 mr-2" />
                 Debug
               </Button>
               <Button 
                 className="bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={() => window.location.href = '/api/auth/login'}
               >
+                <User className="w-4 h-4 mr-2" />
                 Patient Login
               </Button>
               <Button 
@@ -43,6 +46,7 @@ export default function LandingPage() {
                 className="border-blue-500 text-blue-400 hover:bg-blue-900/50 hover:text-blue-300"
                 onClick={() => window.location.href = '/api/auth/clinician/login'}
               >
+                <BriefcaseMedical className="w-4 h-4 mr-2" />
                 Clinician Portal
               </Button>
             </div>

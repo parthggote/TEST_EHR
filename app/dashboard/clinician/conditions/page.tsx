@@ -124,6 +124,8 @@ export default function ClinicianConditionsPage() {
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Input
+                  id="conditions-patient-id-search"
+                  name="conditions-patient-id-search"
                   placeholder="Enter Patient ID to find conditions..."
                   value={patientId}
                   onChange={(e) => setPatientId(e.target.value)}

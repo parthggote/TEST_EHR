@@ -39,6 +39,19 @@ export class EpicFHIRClient {
         this.config.useMockData = true;
       }
     }
+
+    // Server-side validation for critical configuration
+    if (!this.config.useMockData) {
+      if (!this.config.baseUrl || !this.config.baseUrl.startsWith('http')) {
+        throw new Error('FHIR_BASE_URL is not configured or is invalid.');
+      }
+      if (!this.config.clientId) {
+        throw new Error(`Client ID for ${this.userType} user is not configured.`);
+      }
+      if (!this.config.encryptionKey || this.config.encryptionKey.length < 32) {
+        throw new Error('ENCRYPTION_KEY is not configured or is less than 32 characters.');
+      }
+    }
   }
 
   /**
@@ -212,8 +225,8 @@ export class EpicFHIRClient {
    * Make authenticated FHIR API request with retry logic
    */
   private async makeRequest<T>(
-    endpoint: string, 
-    accessToken: string, 
+    endpoint: string,
+    accessToken: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.config.baseUrl}${endpoint}`;
@@ -597,6 +610,26 @@ export class EpicFHIRClient {
   async deleteAllergy(accessToken: string, allergyId: string): Promise<OperationOutcome> {
     return this.makeRequest<OperationOutcome>(`AllergyIntolerance/${allergyId}`, accessToken, {
       method: 'DELETE'
+    });
+  }
+
+  // Billing Operations
+  async searchExplanationOfBenefit(
+    accessToken: string,
+    params: { patient?: string; [key: string]: any }
+  ): Promise<FHIRBundle> {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, value);
+    });
+
+    return this.makeRequest<FHIRBundle>(`ExplanationOfBenefit?${searchParams.toString()}`, accessToken);
+  }
+
+  async createChargeItem(accessToken: string, chargeItem: any): Promise<any> {
+    return this.makeRequest('ChargeItem', accessToken, {
+      method: 'POST',
+      body: JSON.stringify(chargeItem),
     });
   }
 
